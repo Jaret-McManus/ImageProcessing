@@ -1,7 +1,6 @@
 #include <iostream>
 #include <fstream>
-#include <sys/stat.h>
-
+#include "util.h"
 
 void read_bitmap_header(std::ifstream& file, int *had_error) {
 	// 2 bytes header field 0x42 0x4D
@@ -12,12 +11,35 @@ void read_bitmap_header(std::ifstream& file, int *had_error) {
 	}
 
 	// 4 bytes for the size of BMP in bytes
+	uint32_t size = read_four_bytes(file);
+	std::cout << "Size of file is: " << size << "\n";
 
 	// 2 bytes reserved
+	skip_n_bytes(file, 2);
 
 	// 2 bytes reserved
+	skip_n_bytes(file, 2);
 
 	// 4 bytes of the offset where image pixel data starts
+	uint32_t offset = read_four_bytes(file);
+	std::cout << "Offset is: " << offset << "\n";
+}
+
+// read in little endian order
+uint32_t read_four_bytes(std::ifstream& file) {
+	uint32_t read_value = 0;
+	for (int i=0; i<4; i++) {
+		// bit shift by i * 8 needed to convert little endian
+		read_value += file.get() << i * 8; // add read byte
+	}
+
+	return read_value;
+}
+
+void skip_n_bytes(std::ifstream& file, int bytes) {
+	for (int i=0; i<bytes; i++) {
+		file.get(); //discard
+	}
 }
 
 void print_hex(int value) {
@@ -26,10 +48,4 @@ void print_hex(int value) {
 	std::cout << value;
 
 	std::cout << std::dec;
-}
-
-long get_file_size(std::string filename) {
-	struct stat stat_buf;
-	int ret = stat(filename.c_str(), &stat_buf);
-	return ret == 0 ? stat_buf.st_size : -1;
 }
