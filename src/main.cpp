@@ -12,8 +12,12 @@ int main () {
 		return 1;
 	}
 
-	int had_error = 0;
-	read_bitmap_header(file_stream, &had_error);
+	// read header
+	auto bm_hdr = read_bitmap_header(file_stream);
+	if (bm_hdr == NULL) return 1;
+
+	std::cout << "Size: " << bm_hdr->size << "\n";
+	std::cout << "Offset: " << bm_hdr->offset << std::endl;
 
 	file_stream.close();
 	return 0;

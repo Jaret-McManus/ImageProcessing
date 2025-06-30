@@ -1,18 +1,17 @@
 #include <iostream>
 #include <fstream>
+#include <memory>
 #include "util.h"
 
-void read_bitmap_header(std::ifstream& file, int *had_error) {
+std::unique_ptr<BitmapHeader> read_bitmap_header(std::ifstream& file) {
 	// 2 bytes header field 0x42 0x4D
 	if(file.get() != 0x42 || file.get() != 0x4D) {
 		std::cerr << "File doesn't contain valid bit map header!" << std::endl;
-		*had_error = 1;
-		return;
+		return NULL;
 	}
 
 	// 4 bytes for the size of BMP in bytes
 	uint32_t size = read_four_bytes(file);
-	std::cout << "Size of file is: " << size << "\n";
 
 	// 2 bytes reserved
 	skip_n_bytes(file, 2);
@@ -22,7 +21,9 @@ void read_bitmap_header(std::ifstream& file, int *had_error) {
 
 	// 4 bytes of the offset where image pixel data starts
 	uint32_t offset = read_four_bytes(file);
-	std::cout << "Offset is: " << offset << "\n";
+
+	BitmapHeader bm_hdr = { .size = size, .offset = offset};
+	return std::make_unique<BitmapHeader>(bm_hdr);
 }
 
 // read in little endian order
