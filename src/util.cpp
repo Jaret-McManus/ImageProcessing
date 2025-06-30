@@ -26,10 +26,34 @@ std::unique_ptr<BitmapHeader> read_bitmap_header(std::ifstream& file) {
 	return std::make_unique<BitmapHeader>(bm_hdr);
 }
 
+std::unique_ptr<BitmapInfoHeader> read_bitmap_info_header(std::ifstream& file) {
+	uint32_t hdr_size = read_four_bytes(file);
+
+	BitmapInfoHeader bm_info_hdr = {
+		.hdr_size = hdr_size
+	};
+	return std::make_unique<BitmapInfoHeader>(bm_info_hdr);
+}
+
 // read in little endian order
 uint32_t read_four_bytes(std::ifstream& file) {
 	uint32_t read_value = 0;
 	for (int i=0; i<4; i++) {
+		// bit shift by i * 8 needed to convert little endian
+		read_value += file.get() << i * 8; // add read byte
+	}
+
+	return read_value;
+}
+
+uint8_t read_byte(std::ifstream& file) {
+	uint8_t read_value = file.get();
+	return read_value;
+}
+
+uint16_t read_two_bytes(std::ifstream& file) {
+	uint16_t read_value = 0;
+	for (int i=0; i<2; i++) {
 		// bit shift by i * 8 needed to convert little endian
 		read_value += file.get() << i * 8; // add read byte
 	}
