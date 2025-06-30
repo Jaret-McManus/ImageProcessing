@@ -28,9 +28,31 @@ std::unique_ptr<BitmapHeader> read_bitmap_header(std::ifstream& file) {
 
 std::unique_ptr<BitmapInfoHeader> read_bitmap_info_header(std::ifstream& file) {
 	uint32_t hdr_size = read_four_bytes(file);
+	uint32_t    width = read_four_bytes(file);
+	uint32_t   height = read_four_bytes(file);
+
+	uint16_t planes         = read_two_bytes(file);
+	uint16_t bits_per_pixel = read_two_bytes(file);
+
+	uint32_t      compression = read_four_bytes(file);
+	uint32_t       image_size = read_four_bytes(file);
+	uint32_t   x_pixels_per_m = read_four_bytes(file);
+	uint32_t   y_pixels_per_m = read_four_bytes(file);
+	uint32_t      colors_used = read_four_bytes(file);
+	uint32_t important_colors = read_four_bytes(file);
 
 	BitmapInfoHeader bm_info_hdr = {
-		.hdr_size = hdr_size
+		.hdr_size = hdr_size,
+		.width = width,
+		.height = height,
+		.planes = planes,
+		.bits_per_pixel = bits_per_pixel,
+		.compression = compression,
+		.image_size = image_size,
+		.x_pixels_per_m = x_pixels_per_m,
+		.y_pixels_per_m = y_pixels_per_m,
+		.colors_used = colors_used,
+		.important_colors = important_colors
 	};
 	return std::make_unique<BitmapInfoHeader>(bm_info_hdr);
 }
