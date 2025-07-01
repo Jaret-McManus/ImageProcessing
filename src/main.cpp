@@ -28,15 +28,10 @@ int main () {
 	std::vector<std::vector<Pixel24_t>> raw_pixel_array;
 	set_raw_pixel_array(raw_pixel_array, bm_hdr, bm_info_hdr, file_stream);
 
-	// std::cout << "outside of setting!" << std::endl;
-	// std::cout << "   (0, 0) pixel: " << pixel_to_str(raw_pixel_array[0][0]) << std::endl;
-	// std::cout << "(0, 3071) pixel: " << pixel_to_str(raw_pixel_array[0][3072 - 1]) << std::endl;
-	// std::cout << "(   1, 0) pixel: " << pixel_to_str(raw_pixel_array[1][0]) << std::endl;
-	// std::cout << "(1, 3071) pixel: " << pixel_to_str(raw_pixel_array[0][3072 - 1]) << std::endl;
-
 	std::ofstream out_stream("./images/new_img.bmp", std::ios_base::binary | std::ios::out);
 	write_headers(out_stream, file_stream, bm_hdr, bm_info_hdr);
 
+	write_pixel_array_grayscale(out_stream, raw_pixel_array);
 	file_stream.close();
 	out_stream.close();
 	return 0;

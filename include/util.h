@@ -3,6 +3,8 @@
 #include <memory>
 #include <vector>
 #include <format>
+#include <cmath>
+#include <cstring>
 
 typedef struct {
 	// char header_field[2];
@@ -45,7 +47,10 @@ void skip_n_bytes(std::ifstream& file, int bytes);
 // writing functions
 void write_headers(std::ofstream& out, std::ifstream& in, std::unique_ptr<BitmapHeader>& bm_hdr, std::unique_ptr<BitmapInfoHeader>& bm_info_hdr);
 void write_n_bytes(std::ofstream& out, std::ifstream& in, int num_bytes);
+void write_padding(std::ofstream& out, int padding_len);
+void write_pixel_array_grayscale(std::ofstream& out, std::vector<std::vector<Pixel24_t>>& raw_pixel_array);
 
 // printing functions
 void print_hex(int value);
 std::string pixel_to_str(Pixel24_t& pixel);
+std::string pixel_to_hex_str(Pixel24_t& pixel);
