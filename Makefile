@@ -1,4 +1,4 @@
-GXX  := g++
+CXX  := g++
 SRCD := src
 TSTD := tests
 BLDD := build
@@ -48,13 +48,13 @@ $(BLDD):
 	mkdir -p $(BLDD)
 
 $(BIND)/$(EXEC): $(MAIN) $(ALL_FUNCF)
-	$(CXX) $(CFLAGS) $(MAIN) $(ALL_FUNCF) -o $@ $(LIBS)
+	$(CXX) $(CXXFLAGS) $(MAIN) $(ALL_FUNCF) -o $@ $(LIBS)
 
 $(BIND)/$(TEST_EXEC): $(ALL_FUNCF) $(TEST_SRCF)
-	$(CXX) $(CFLAGS) $(INC) $(ALL_FUNCF) $(TEST_SRCF) $(TEST_OBJF) $(TEST_LIB) $(LIBS) -o $@
+	$(CXX) $(CXXFLAGS) $(INC) $(ALL_FUNCF) $(TEST_SRCF) $(TEST_OBJF) $(TEST_LIB) $(LIBS) -o $@
 
 $(BLDD)/%.o: $(SRCD)/%.cpp
-	$(CXX) $(CFLAGS) $(INC) -c -o $@ $<
+	$(CXX) $(CXXFLAGS) $(INC) -c -o $@ $<
 
 clean:
 	rm -rf $(BLDD) $(BIND)
