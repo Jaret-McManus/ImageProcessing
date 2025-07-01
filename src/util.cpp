@@ -81,6 +81,23 @@ void set_raw_pixel_array(std::vector<std::vector<Pixel24_t>>& raw_pixel_array, s
 		}
 	}
 }
+
+void write_headers(std::ofstream& out, std::ifstream& in, std::unique_ptr<BitmapHeader>& bm_hdr, std::unique_ptr<BitmapInfoHeader>& bm_info_hdr) {
+	in.seekg(0, std::ios::beg); // reset cursor
+
+	// write header
+	const int HEADER_BUF_SIZE = 14;
+	write_n_bytes(out, in, HEADER_BUF_SIZE); // Header is 14 bytes
+
+	// write info header
+	write_n_bytes(out, in, bm_info_hdr->hdr_size);
+
+	// copy rest until pixel data
+	const int REST_AFTER_HEADERS = bm_hdr->offset - HEADER_BUF_SIZE - bm_info_hdr->hdr_size;
+	write_n_bytes(out, in, REST_AFTER_HEADERS);
+
+}
+
 // read in little endian order
 uint32_t read_four_bytes(std::ifstream& file) {
 	uint32_t read_value = 0;
@@ -113,6 +130,13 @@ void skip_n_bytes(std::ifstream& file, int bytes) {
 	}
 }
 
+void write_n_bytes(std::ofstream& out, std::ifstream& in, int num_bytes) {
+	char buf[num_bytes];
+
+	in.read(&buf[0], num_bytes);
+	out.write(&buf[0], num_bytes);
+}
+
 void print_hex(int value) {
 	std::cout << std::hex;
 
@@ -122,6 +146,5 @@ void print_hex(int value) {
 }
 
 std::string pixel_to_str(Pixel24_t& pixel) {
-	std::cout << "hello" << std::endl;
 	return std::format("({}, {}, {})", pixel.red, pixel.green, pixel.blue);
 }

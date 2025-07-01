@@ -42,6 +42,9 @@ uint16_t read_two_bytes(std::ifstream& file);
 uint32_t read_four_bytes(std::ifstream& file);
 void skip_n_bytes(std::ifstream& file, int bytes);
 
+// writing functions
+void write_headers(std::ofstream& out, std::ifstream& in, std::unique_ptr<BitmapHeader>& bm_hdr, std::unique_ptr<BitmapInfoHeader>& bm_info_hdr);
+void write_n_bytes(std::ofstream& out, std::ifstream& in, int num_bytes);
 
 // printing functions
 void print_hex(int value);
