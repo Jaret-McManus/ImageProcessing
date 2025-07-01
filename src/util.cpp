@@ -70,10 +70,13 @@ void set_raw_pixel_array(std::vector<std::vector<Pixel24_t>>& raw_pixel_array, s
 		raw_pixel_array[i].reserve(bm_info_hdr->height); // reserve pixel row
 
 		for (uint j=0; j<bm_info_hdr->height; j++) {
+			uint8_t  blue = read_byte(file);
+			uint8_t green = read_byte(file);
+			uint8_t   red = read_byte(file);
 			raw_pixel_array[i][j] = {
-				.red = read_byte(file),
-				.green = read_byte(file),
-				.blue = read_byte(file)
+				.red = red,
+				.green = green,
+				.blue = blue
 			};
 		}
 	}
