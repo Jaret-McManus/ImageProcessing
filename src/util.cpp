@@ -1,6 +1,8 @@
 #include <iostream>
 #include <fstream>
+#include <ios>
 #include <memory>
+#include <format>
 #include "util.h"
 
 std::unique_ptr<BitmapHeader> read_bitmap_header(std::ifstream& file) {
@@ -57,6 +59,25 @@ std::unique_ptr<BitmapInfoHeader> read_bitmap_info_header(std::ifstream& file) {
 	return std::make_unique<BitmapInfoHeader>(bm_info_hdr);
 }
 
+void set_raw_pixel_array(std::vector<std::vector<Pixel24_t>>& raw_pixel_array, std::unique_ptr<BitmapHeader>& bm_hdr, std::unique_ptr<BitmapInfoHeader>& bm_info_hdr, std::ifstream& file) {
+	raw_pixel_array.reserve(bm_info_hdr->width); // reserve pixel columns
+
+	// seek to start of pixel data
+	file.seekg(bm_hdr->offset, std::ios::beg);
+
+	// start reading
+	for (uint i=0; i<bm_info_hdr->width; i++) {
+		raw_pixel_array[i].reserve(bm_info_hdr->height); // reserve pixel row
+
+		for (uint j=0; j<bm_info_hdr->height; j++) {
+			raw_pixel_array[i][j] = {
+				.red = read_byte(file),
+				.green = read_byte(file),
+				.blue = read_byte(file)
+			};
+		}
+	}
+}
 // read in little endian order
 uint32_t read_four_bytes(std::ifstream& file) {
 	uint32_t read_value = 0;
@@ -95,4 +116,9 @@ void print_hex(int value) {
 	std::cout << value;
 
 	std::cout << std::dec;
+}
+
+std::string pixel_to_str(Pixel24_t& pixel) {
+	std::cout << "hello" << std::endl;
+	return std::format("({}, {}, {})", pixel.red, pixel.green, pixel.blue);
 }

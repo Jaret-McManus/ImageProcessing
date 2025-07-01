@@ -1,8 +1,10 @@
 #include <iostream>
 #include <cstdint>
 #include <memory>
+#include <vector>
+#include <format>
 
-typedef struct BitmapHeader {
+typedef struct {
 	// char header_field[2];
 	uint32_t size;
 	// int16_t reserved1;
@@ -24,9 +26,15 @@ typedef struct {
 	uint32_t important_colors;
 } BitmapInfoHeader;
 
-void print_hex(int value);
+typedef struct {
+	uint8_t red;
+	uint8_t green;
+	uint8_t blue;
+} Pixel24_t;
+
 std::unique_ptr<BitmapHeader> read_bitmap_header(std::ifstream& file);
 std::unique_ptr<BitmapInfoHeader> read_bitmap_info_header(std::ifstream& file);
+void set_raw_pixel_array(std::vector<std::vector<Pixel24_t>>& raw_pixel_array, std::unique_ptr<BitmapHeader>& bm_hdr, std::unique_ptr<BitmapInfoHeader>& bm_info_hdr, std::ifstream& file);
 
 // reading functions
 uint8_t read_byte(std::ifstream& file);
@@ -35,3 +43,6 @@ uint32_t read_four_bytes(std::ifstream& file);
 void skip_n_bytes(std::ifstream& file, int bytes);
 
 
+// printing functions
+void print_hex(int value);
+std::string pixel_to_str(Pixel24_t& pixel);
