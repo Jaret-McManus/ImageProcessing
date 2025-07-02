@@ -28,11 +28,33 @@ int main () {
 	std::vector<std::vector<Pixel24_t>> raw_pixel_array;
 	set_raw_pixel_array(raw_pixel_array, bm_hdr, bm_info_hdr, file_stream);
 
-	std::ofstream out_stream("./images/new_img.bmp", std::ios_base::binary | std::ios::out);
-	write_headers(out_stream, file_stream, bm_hdr, bm_info_hdr);
+	std::ofstream gray_out_stream("./images/gray.bmp", std::ios_base::binary | std::ios::out);
+	write_headers(gray_out_stream, file_stream, bm_hdr, bm_info_hdr);
+	std::ofstream red_out_stream("./images/red.bmp", std::ios_base::binary | std::ios::out);
+	write_headers(red_out_stream, file_stream, bm_hdr, bm_info_hdr);
+	std::ofstream green_out_stream("./images/green.bmp", std::ios_base::binary | std::ios::out);
+	write_headers(green_out_stream, file_stream, bm_hdr, bm_info_hdr);
+	std::ofstream blue_out_stream("./images/blue.bmp", std::ios_base::binary | std::ios::out);
+	write_headers(blue_out_stream, file_stream, bm_hdr, bm_info_hdr);
+	std::ofstream invert_out_stream("./images/invert.bmp", std::ios_base::binary | std::ios::out);
+	write_headers(invert_out_stream, file_stream, bm_hdr, bm_info_hdr);
+	std::ofstream bgr_out_stream("./images/bgr.bmp", std::ios_base::binary | std::ios::out);
+	write_headers(bgr_out_stream, file_stream, bm_hdr, bm_info_hdr);
 
-	write_pixel_array_grayscale(out_stream, raw_pixel_array);
+	write_pixel_array_grayscale(gray_out_stream, raw_pixel_array);
+	write_pixel_array_red(red_out_stream, raw_pixel_array);
+	write_pixel_array_green(green_out_stream, raw_pixel_array);
+	write_pixel_array_blue(blue_out_stream, raw_pixel_array);
+	write_pixel_array_invert(invert_out_stream, raw_pixel_array);
+	write_pixel_array_bgr(bgr_out_stream, raw_pixel_array);
+
 	file_stream.close();
-	out_stream.close();
+	gray_out_stream.close();
+	red_out_stream.close();
+	green_out_stream.close();
+	blue_out_stream.close();
+	invert_out_stream.close();
+	bgr_out_stream.close();
+
 	return 0;
 }

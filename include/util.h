@@ -49,6 +49,11 @@ void write_headers(std::ofstream& out, std::ifstream& in, std::unique_ptr<Bitmap
 void write_n_bytes(std::ofstream& out, std::ifstream& in, int num_bytes);
 void write_padding(std::ofstream& out, int padding_len);
 void write_pixel_array_grayscale(std::ofstream& out, std::vector<std::vector<Pixel24_t>>& raw_pixel_array);
+void write_pixel_array_red(std::ofstream& out, std::vector<std::vector<Pixel24_t>>& raw_pixel_array);
+void write_pixel_array_green(std::ofstream& out, std::vector<std::vector<Pixel24_t>>& raw_pixel_array);
+void write_pixel_array_blue(std::ofstream& out, std::vector<std::vector<Pixel24_t>>& raw_pixel_array);
+void write_pixel_array_invert(std::ofstream& out, std::vector<std::vector<Pixel24_t>>& raw_pixel_array);
+void write_pixel_array_bgr(std::ofstream& out, std::vector<std::vector<Pixel24_t>>& raw_pixel_array);
 
 // printing functions
 void print_hex(int value);

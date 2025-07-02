@@ -171,15 +171,13 @@ std::string pixel_to_hex_str(Pixel24_t& pixel) {
 }
 
 void write_pixel_array_grayscale(std::ofstream& out, std::vector<std::vector<Pixel24_t>>& raw_pixel_array) {
-	std::cout << "in gray" << std::endl;
-
 	int height = raw_pixel_array.size();
 	int width = raw_pixel_array.front().size();
 
-	std::cout << std::format("height: {}, width: {}", height, width) << std::endl;
-	std::cout << std::format("{} {} {} {}", pixel_to_str(raw_pixel_array[0][0]), pixel_to_str(raw_pixel_array[0][1]), pixel_to_str(raw_pixel_array[0][2]), pixel_to_str(raw_pixel_array[0][3])) << std::endl;
+
 	for (int i=0; i<height; i++) {
 		uint32_t bytes_written = 0;
+		char row_buffer[width * 3];
 		for (int j=0; j<width; j++) {
 			Pixel24_t pixel = raw_pixel_array[i][j];
 
@@ -189,12 +187,182 @@ void write_pixel_array_grayscale(std::ofstream& out, std::vector<std::vector<Pix
 			uint8_t gray_value = static_cast<int>(std::round(gray_value_f));
 
 			// output gray bytes for 3 channels
-			out.put(gray_value);
-			out.put(gray_value);
-			out.put(gray_value);
+			row_buffer[bytes_written + 0] = gray_value;
+			row_buffer[bytes_written + 1] = gray_value;
+			row_buffer[bytes_written + 2] = gray_value;
 
 			bytes_written += 3;
 		}
+
+		// write row
+		out.write(&row_buffer[0], width * 3);
+
+		// add padding bits
+		if (bytes_written % 4 != 0) {
+			write_padding(out, 4 - (bytes_written % 4));
+		}
+	}
+}
+void write_pixel_array_red(std::ofstream& out, std::vector<std::vector<Pixel24_t>>& raw_pixel_array) {
+	int height = raw_pixel_array.size();
+	int width = raw_pixel_array.front().size();
+
+
+	for (int i=0; i<height; i++) {
+		uint32_t bytes_written = 0;
+		char row_buffer[width * 3];
+		for (int j=0; j<width; j++) {
+			Pixel24_t pixel = raw_pixel_array[i][j];
+
+			// using this algorithm for nice grayscale to human eye:
+			//		value = 0.3*red + 0.59*green + 0.11*blue
+			float gray_value_f = 0.3 * pixel.red + 0.59 * pixel.green + 0.11 * pixel.blue;
+			uint8_t gray_value = static_cast<int>(std::round(gray_value_f));
+
+			// output gray bytes for 3 channels
+			row_buffer[bytes_written + 0] = 0;
+			row_buffer[bytes_written + 1] = 0;
+			row_buffer[bytes_written + 2] = pixel.red;
+
+			bytes_written += 3;
+		}
+
+		// write row
+		out.write(&row_buffer[0], width * 3);
+
+		// add padding bits
+		if (bytes_written % 4 != 0) {
+			write_padding(out, 4 - (bytes_written % 4));
+		}
+	}
+}
+
+void write_pixel_array_green(std::ofstream& out, std::vector<std::vector<Pixel24_t>>& raw_pixel_array) {
+	int height = raw_pixel_array.size();
+	int width = raw_pixel_array.front().size();
+
+
+	for (int i=0; i<height; i++) {
+		uint32_t bytes_written = 0;
+		char row_buffer[width * 3];
+		for (int j=0; j<width; j++) {
+			Pixel24_t pixel = raw_pixel_array[i][j];
+
+			// using this algorithm for nice grayscale to human eye:
+			//		value = 0.3*red + 0.59*green + 0.11*blue
+			float gray_value_f = 0.3 * pixel.red + 0.59 * pixel.green + 0.11 * pixel.blue;
+			uint8_t gray_value = static_cast<int>(std::round(gray_value_f));
+
+			// output gray bytes for 3 channels
+			row_buffer[bytes_written + 0] = 0;
+			row_buffer[bytes_written + 1] = pixel.green;
+			row_buffer[bytes_written + 2] = 0;
+
+			bytes_written += 3;
+		}
+
+		// write row
+		out.write(&row_buffer[0], width * 3);
+
+		// add padding bits
+		if (bytes_written % 4 != 0) {
+			write_padding(out, 4 - (bytes_written % 4));
+		}
+	}
+}
+
+void write_pixel_array_blue(std::ofstream& out, std::vector<std::vector<Pixel24_t>>& raw_pixel_array) {
+	int height = raw_pixel_array.size();
+	int width = raw_pixel_array.front().size();
+
+
+	for (int i=0; i<height; i++) {
+		uint32_t bytes_written = 0;
+		char row_buffer[width * 3];
+		for (int j=0; j<width; j++) {
+			Pixel24_t pixel = raw_pixel_array[i][j];
+
+			// using this algorithm for nice grayscale to human eye:
+			//		value = 0.3*red + 0.59*green + 0.11*blue
+			float gray_value_f = 0.3 * pixel.red + 0.59 * pixel.green + 0.11 * pixel.blue;
+			uint8_t gray_value = static_cast<int>(std::round(gray_value_f));
+
+			// output gray bytes for 3 channels
+			row_buffer[bytes_written + 0] = pixel.blue;
+			row_buffer[bytes_written + 1] = 0;
+			row_buffer[bytes_written + 2] = 0;
+
+			bytes_written += 3;
+		}
+
+		// write row
+		out.write(&row_buffer[0], width * 3);
+
+		// add padding bits
+		if (bytes_written % 4 != 0) {
+			write_padding(out, 4 - (bytes_written % 4));
+		}
+	}
+}
+void write_pixel_array_invert(std::ofstream& out, std::vector<std::vector<Pixel24_t>>& raw_pixel_array) {
+	int height = raw_pixel_array.size();
+	int width = raw_pixel_array.front().size();
+
+
+	for (int i=0; i<height; i++) {
+		uint32_t bytes_written = 0;
+		char row_buffer[width * 3];
+		for (int j=0; j<width; j++) {
+			Pixel24_t pixel = raw_pixel_array[i][j];
+
+			// using this algorithm for nice grayscale to human eye:
+			//		value = 0.3*red + 0.59*green + 0.11*blue
+			float gray_value_f = 0.3 * pixel.red + 0.59 * pixel.green + 0.11 * pixel.blue;
+			uint8_t gray_value = static_cast<int>(std::round(gray_value_f));
+
+			// output gray bytes for 3 channels
+			row_buffer[bytes_written + 0] = ~pixel.blue;
+			row_buffer[bytes_written + 1] = ~pixel.green;
+			row_buffer[bytes_written + 2] = ~pixel.red;
+
+			bytes_written += 3;
+		}
+
+		// write row
+		out.write(&row_buffer[0], width * 3);
+
+		// add padding bits
+		if (bytes_written % 4 != 0) {
+			write_padding(out, 4 - (bytes_written % 4));
+		}
+	}
+}
+void write_pixel_array_bgr(std::ofstream& out, std::vector<std::vector<Pixel24_t>>& raw_pixel_array) {
+	int height = raw_pixel_array.size();
+	int width = raw_pixel_array.front().size();
+
+
+	for (int i=0; i<height; i++) {
+		uint32_t bytes_written = 0;
+		char row_buffer[width * 3];
+		for (int j=0; j<width; j++) {
+			Pixel24_t pixel = raw_pixel_array[i][j];
+
+			// using this algorithm for nice grayscale to human eye:
+			//		value = 0.3*red + 0.59*green + 0.11*blue
+			float gray_value_f = 0.3 * pixel.red + 0.59 * pixel.green + 0.11 * pixel.blue;
+			uint8_t gray_value = static_cast<int>(std::round(gray_value_f));
+
+			// output gray bytes for 3 channels
+			row_buffer[bytes_written + 0] = pixel.red;
+			row_buffer[bytes_written + 1] = pixel.green;
+			row_buffer[bytes_written + 2] = pixel.blue;
+
+			bytes_written += 3;
+		}
+
+		// write row
+		out.write(&row_buffer[0], width * 3);
 
 		// add padding bits
 		if (bytes_written % 4 != 0) {
