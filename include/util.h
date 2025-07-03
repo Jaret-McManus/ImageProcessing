@@ -42,7 +42,7 @@ typedef struct {
 	}
 } BitmapInfoHeader;
 
-typedef struct {
+struct Pixel24_t{
 	uint8_t red;
 	uint8_t green;
 	uint8_t blue;
@@ -54,7 +54,7 @@ typedef struct {
 	std::string to_str_hex() {
 		return std::format("({:x}, {:x}, {:x})", red, green, blue);
 	}
-} Pixel24_t;
+};
 
 std::unique_ptr<BitmapHeader> read_bitmap_header(std::ifstream& file);
 std::unique_ptr<BitmapInfoHeader> read_bitmap_info_header(std::ifstream& file);

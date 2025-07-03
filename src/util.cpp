@@ -70,11 +70,7 @@ void set_raw_pixel_array(std::vector<std::vector<Pixel24_t>>& raw_pixel_array, s
 
 	// seek to start of pixel data
 	file.seekg(bm_hdr->offset, std::ios::beg);
-	std::cout << std::format("tellg after seek to offset: {}\n", static_cast<long>(file.tellg()));
 
-
-	long last_good_g = 0;
-	long iter = 0;
 	// start reading
 	for (uint i=0; i<bm_info_hdr->height; i++) {
 		uint32_t bytes_read = 0;
@@ -88,21 +84,11 @@ void set_raw_pixel_array(std::vector<std::vector<Pixel24_t>>& raw_pixel_array, s
 			uint8_t green = read_byte(file);
 			uint8_t   red = read_byte(file);
 
-			if(!file.good()) {
-				std::cout << std::format("File not good at {}, {}\ntellg: {}, iter: {}\n", i, j, last_good_g, iter);
-				abort();
-			}
-			last_good_g = static_cast<long>(file.tellg());
-			iter++;
 			Pixel24_t pixel = {
 				.red = red,
 				.green = green,
 				.blue = blue
 			};
-
-			if(i== 0 && j == 0){
-				std::cout << std::format("First pixel in func: {}\n", pixel.to_str_hex());
-			}
 
 			pixel_row.push_back(pixel);
 			bytes_read += 3; // 3 bytes per pixel
