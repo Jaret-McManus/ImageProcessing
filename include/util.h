@@ -7,11 +7,15 @@
 #include <cstring>
 
 typedef struct {
-	// char header_field[2];
+	std::string header_field;
 	uint32_t size;
-	// int16_t reserved1;
-	// int16_t reserved2;
+	uint16_t reserved1;
+	uint16_t reserved2;
 	uint32_t offset;
+
+	std::string to_str() {
+		return std::format("{{\n  header_field: {},\n  size: {},\n  reserved1: {},\n  reserved2: {},\n  offset: {}\n}}", header_field, size, reserved1, reserved2, offset);
+	}
 } BitmapHeader;
 
 typedef struct {
@@ -26,12 +30,30 @@ typedef struct {
 	uint32_t y_pixels_per_m;
 	uint32_t colors_used;
 	uint32_t important_colors;
+
+	std::string to_str() {
+		return std::format(
+			"{{\n  hdr_size: {},\n  width: {},\n  height: {},\n  planes: {}\n  bits_per_pixel: {},\n  compression: {},\n  image_size: {},\n  x_pixels_per_m: {},\n  y_pixels_per_m: {},\n  colors_used: {},\n  important_colors: {}\n}}",
+			hdr_size, width, height,
+			planes, bits_per_pixel, compression,
+			image_size, x_pixels_per_m, y_pixels_per_m,
+			colors_used, important_colors
+		);
+	}
 } BitmapInfoHeader;
 
 typedef struct {
 	uint8_t red;
 	uint8_t green;
 	uint8_t blue;
+
+	std::string to_str() {
+		return std::format("({}, {}, {})", red, green, blue);
+	}
+
+	std::string to_str_hex() {
+		return std::format("({:x}, {:x}, {:x})", red, green, blue);
+	}
 } Pixel24_t;
 
 std::unique_ptr<BitmapHeader> read_bitmap_header(std::ifstream& file);
@@ -57,5 +79,3 @@ void write_pixel_array_bgr(std::ofstream& out, std::vector<std::vector<Pixel24_t
 
 // printing functions
 void print_hex(int value);
-std::string pixel_to_str(Pixel24_t& pixel);
-std::string pixel_to_hex_str(Pixel24_t& pixel);

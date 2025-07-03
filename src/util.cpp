@@ -7,24 +7,30 @@
 
 std::unique_ptr<BitmapHeader> read_bitmap_header(std::ifstream& file) {
 	// 2 bytes header field 0x42 0x4D
-	if(file.get() != 0x42 || file.get() != 0x4D) {
+	char first_char  = file.get();
+	char second_char = file.get();
+	if(first_char != 0x42 || second_char != 0x4D) {
 		std::cerr << "File doesn't contain valid bit map header!" << std::endl;
-		return NULL;
+		return nullptr;
 	}
 
 	// 4 bytes for the size of BMP in bytes
 	uint32_t size = read_four_bytes(file);
 
-	// 2 bytes reserved
-	skip_n_bytes(file, 2);
-
-	// 2 bytes reserved
-	skip_n_bytes(file, 2);
+	// 2 bytes reserved, two in a row
+	uint16_t reserved1 = read_two_bytes(file);
+	uint16_t reserved2 = read_two_bytes(file);
 
 	// 4 bytes of the offset where image pixel data starts
 	uint32_t offset = read_four_bytes(file);
 
-	BitmapHeader bm_hdr = { .size = size, .offset = offset};
+	BitmapHeader bm_hdr = {
+		.header_field = std::format("{}{}", first_char, second_char),
+		.size = size,
+		.reserved1 = reserved1,
+		.reserved2 = reserved2,
+		.offset = offset
+	};
 	return std::make_unique<BitmapHeader>(bm_hdr);
 }
 
@@ -64,7 +70,11 @@ void set_raw_pixel_array(std::vector<std::vector<Pixel24_t>>& raw_pixel_array, s
 
 	// seek to start of pixel data
 	file.seekg(bm_hdr->offset, std::ios::beg);
+	std::cout << std::format("tellg after seek to offset: {}\n", static_cast<long>(file.tellg()));
 
+
+	long last_good_g = 0;
+	long iter = 0;
 	// start reading
 	for (uint i=0; i<bm_info_hdr->height; i++) {
 		uint32_t bytes_read = 0;
@@ -77,11 +87,22 @@ void set_raw_pixel_array(std::vector<std::vector<Pixel24_t>>& raw_pixel_array, s
 			uint8_t  blue = read_byte(file);
 			uint8_t green = read_byte(file);
 			uint8_t   red = read_byte(file);
+
+			if(!file.good()) {
+				std::cout << std::format("File not good at {}, {}\ntellg: {}, iter: {}\n", i, j, last_good_g, iter);
+				abort();
+			}
+			last_good_g = static_cast<long>(file.tellg());
+			iter++;
 			Pixel24_t pixel = {
 				.red = red,
 				.green = green,
 				.blue = blue
 			};
+
+			if(i== 0 && j == 0){
+				std::cout << std::format("First pixel in func: {}\n", pixel.to_str_hex());
+			}
 
 			pixel_row.push_back(pixel);
 			bytes_read += 3; // 3 bytes per pixel
@@ -141,10 +162,19 @@ void skip_n_bytes(std::ifstream& file, int bytes) {
 }
 
 void write_n_bytes(std::ofstream& out, std::ifstream& in, int num_bytes) {
-	char buf[num_bytes];
+	std::vector<char> buf(num_bytes);
 
-	in.read(&buf[0], num_bytes);
-	out.write(&buf[0], num_bytes);
+	in.read(buf.data(), num_bytes);
+	if (in.gcount() != num_bytes) {
+		std::cerr << std::format("Failed to read {} bytes, only read {}\n", num_bytes, in.gcount());
+		return;
+	}
+
+	out.write(buf.data(), num_bytes);
+	if (!out.good()) {
+		std::cerr << std::format("failed to write {} bytes\n", num_bytes);
+		return;
+	}
 }
 
 void write_padding(std::ofstream& out, int padding_len) {
@@ -160,14 +190,6 @@ void print_hex(int value) {
 	std::cout << value;
 
 	std::cout << std::dec;
-}
-
-std::string pixel_to_str(Pixel24_t& pixel) {
-	return std::format("({}, {}, {})", pixel.red, pixel.green, pixel.blue);
-}
-
-std::string pixel_to_hex_str(Pixel24_t& pixel) {
-	return std::format("({:x}, {:x}, {:x})", pixel.red, pixel.green, pixel.blue);
 }
 
 void write_pixel_array_grayscale(std::ofstream& out, std::vector<std::vector<Pixel24_t>>& raw_pixel_array) {
