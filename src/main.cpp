@@ -19,24 +19,48 @@ int main (int argc, char *argv[]) {
 		return 1;
 	}
 
+	// choose function
+	std::function<Pixel24_t(int, int, std::vector<std::vector<Pixel24_t>>&)> func;
+	std::string function_arg = argv[3] ? std::string(argv[3]) : "";
+	if (argc == 3) {
+		func = grayscale_pixel;
+	} else if (function_arg == "--box-blur") {
+		func = box_blur;
+	} else if (function_arg == "--box-blur-err") {
+		func = box_blur_err;
+	} else if (function_arg == "--gray") {
+		func = grayscale_pixel;
+	} else if (function_arg == "--blue") {
+		func = blue;
+	} else {
+		std::cerr << std::format("Invalid function flag!: ({})\n", argv[3]);
+		return 1;
+	}
+
 	// read header
+	std::cout << std::format("in file good before header read?: {}\n", file_stream.good());
 	auto bm_hdr = read_bitmap_header(file_stream);
 	if (bm_hdr == nullptr) return 1;
 
+	std::cout << std::format("in file good before info header read?: {}\n", file_stream.good());
 	auto bm_info_hdr = read_bitmap_info_header(file_stream);
 	if (bm_info_hdr == NULL) return 1;
 
+	// std::cout << std::format("BM Header:\n{}\nBM info hdr:\n{}\n", bm_hdr->to_str(), bm_info_hdr->to_str());
+
 	// set pixel array
-	std::vector<std::vector<Pixel24_t>> raw_pixel_array;
-	set_raw_pixel_array(raw_pixel_array, bm_hdr, bm_info_hdr, file_stream);
+	std::cout << std::format("in file good before pixel read?: {}\n", file_stream.good());
+	std::vector<std::vector<Pixel24_t>> pixel_array;
+	set_pixel_array(pixel_array, bm_hdr, bm_info_hdr, file_stream);
 
-	std::ofstream gray_out_stream(output_file_name, std::ios_base::binary | std::ios::out);
-	write_headers(gray_out_stream, file_stream, bm_hdr, bm_info_hdr);
+	std::cout << std::format("in file good before writing headers: {}\n", file_stream.good());
+	std::ofstream out_stream(output_file_name, std::ios_base::binary | std::ios::out);
+	write_headers(out_stream, file_stream, bm_hdr, bm_info_hdr);
 
-	write_pixel_array_grayscale(gray_out_stream, raw_pixel_array);
+	write_pixel_array(out_stream, pixel_array, func);
 
 	file_stream.close();
-	gray_out_stream.close();
+	out_stream.close();
 
 	return 0;
 }

@@ -65,8 +65,8 @@ std::unique_ptr<BitmapInfoHeader> read_bitmap_info_header(std::ifstream& file) {
 	return std::make_unique<BitmapInfoHeader>(bm_info_hdr);
 }
 
-void set_raw_pixel_array(std::vector<std::vector<Pixel24_t>>& raw_pixel_array, std::unique_ptr<BitmapHeader>& bm_hdr, std::unique_ptr<BitmapInfoHeader>& bm_info_hdr, std::ifstream& file) {
-	raw_pixel_array.reserve(bm_info_hdr->height); // reserve pixel columns
+void set_pixel_array(std::vector<std::vector<Pixel24_t>>& pixel_array, std::unique_ptr<BitmapHeader>& bm_hdr, std::unique_ptr<BitmapInfoHeader>& bm_info_hdr, std::ifstream& file) {
+	pixel_array.reserve(bm_info_hdr->height); // reserve pixel columns
 
 	// seek to start of pixel data
 	file.seekg(bm_hdr->offset, std::ios::beg);
@@ -75,8 +75,8 @@ void set_raw_pixel_array(std::vector<std::vector<Pixel24_t>>& raw_pixel_array, s
 	for (uint i=0; i<bm_info_hdr->height; i++) {
 		uint32_t bytes_read = 0;
 
-		raw_pixel_array.emplace_back();
-		auto& pixel_row = raw_pixel_array.back();
+		pixel_array.emplace_back();
+		auto& pixel_row = pixel_array.back();
 		pixel_row.reserve(bm_info_hdr->width); // reserve pixel row
 
 		for (uint j=0; j<bm_info_hdr->width; j++) {
@@ -84,24 +84,23 @@ void set_raw_pixel_array(std::vector<std::vector<Pixel24_t>>& raw_pixel_array, s
 			uint8_t green = read_byte(file);
 			uint8_t   red = read_byte(file);
 
-			Pixel24_t pixel = {
-				.red = red,
-				.green = green,
-				.blue = blue
-			};
+			Pixel24_t pixel(red, green, blue);
 
 			pixel_row.push_back(pixel);
 			bytes_read += 3; // 3 bytes per pixel
 		}
 
 		// skip and discard padding bits
-		skip_n_bytes(file, bytes_read % 4);
+		if (bytes_read % 4)
+			skip_n_bytes(file, 4 - (bytes_read % 4));
 	}
 }
 
 void write_headers(std::ofstream& out, std::ifstream& in, std::unique_ptr<BitmapHeader>& bm_hdr, std::unique_ptr<BitmapInfoHeader>& bm_info_hdr) {
 	in.seekg(0, std::ios::beg); // reset cursor
 
+	std::cout << std::format("in file at the start of write headers: {}\n", in.good());
+	
 	// write header
 	const int HEADER_BUF_SIZE = 14;
 	write_n_bytes(out, in, HEADER_BUF_SIZE); // Header is 14 bytes
@@ -141,10 +140,16 @@ uint16_t read_two_bytes(std::ifstream& file) {
 	return read_value;
 }
 
-void skip_n_bytes(std::ifstream& file, int bytes) {
-	for (int i=0; i<bytes; i++) {
-		file.get(); //discard
+int skip_n_bytes(std::ifstream& file, int num_bytes) {
+	std::vector<char> buf(num_bytes);
+
+	file.read(buf.data(), num_bytes);
+	if (file.gcount() != num_bytes) {
+		std::cerr << std::format("Failed to read {} bytes in skip_n_bytes, only read {}\n", num_bytes, file.gcount());
+		return 1;
 	}
+
+	return 0;
 }
 
 void write_n_bytes(std::ofstream& out, std::ifstream& in, int num_bytes) {
@@ -178,16 +183,16 @@ void print_hex(int value) {
 	std::cout << std::dec;
 }
 
-void write_pixel_array_grayscale(std::ofstream& out, std::vector<std::vector<Pixel24_t>>& raw_pixel_array) {
-	int height = raw_pixel_array.size();
-	int width = raw_pixel_array.front().size();
+void write_pixel_array_grayscale(std::ofstream& out, std::vector<std::vector<Pixel24_t>>& pixel_array) {
+	int height = pixel_array.size();
+	int width  = pixel_array.front().size();
 
 
 	for (int i=0; i<height; i++) {
 		uint32_t bytes_written = 0;
 		char row_buffer[width * 3];
 		for (int j=0; j<width; j++) {
-			Pixel24_t pixel = raw_pixel_array[i][j];
+			Pixel24_t pixel = pixel_array[i][j];
 
 			// using this algorithm for nice grayscale to human eye:
 			//		value = 0.3*red + 0.59*green + 0.11*blue
@@ -211,25 +216,21 @@ void write_pixel_array_grayscale(std::ofstream& out, std::vector<std::vector<Pix
 		}
 	}
 }
-void write_pixel_array_red(std::ofstream& out, std::vector<std::vector<Pixel24_t>>& raw_pixel_array) {
-	int height = raw_pixel_array.size();
-	int width = raw_pixel_array.front().size();
+
+void write_pixel_array(std::ofstream& out, std::vector<std::vector<Pixel24_t>>& pixel_array, std::function<Pixel24_t(int, int, std::vector<std::vector<Pixel24_t>>&)> calculate_pixel) {
+	int height = pixel_array.size();
+	int width  = pixel_array.front().size();
 
 
 	for (int i=0; i<height; i++) {
 		uint32_t bytes_written = 0;
 		char row_buffer[width * 3];
 		for (int j=0; j<width; j++) {
-			Pixel24_t pixel = raw_pixel_array[i][j];
-
-			// using this algorithm for nice grayscale to human eye:
-			//		value = 0.3*red + 0.59*green + 0.11*blue
-			float gray_value_f = 0.3 * pixel.red + 0.59 * pixel.green + 0.11 * pixel.blue;
-			uint8_t gray_value = static_cast<int>(std::round(gray_value_f));
+			Pixel24_t pixel = calculate_pixel(i, j, pixel_array);
 
 			// output gray bytes for 3 channels
-			row_buffer[bytes_written + 0] = 0;
-			row_buffer[bytes_written + 1] = 0;
+			row_buffer[bytes_written + 0] = pixel.blue;
+			row_buffer[bytes_written + 1] = pixel.green;
 			row_buffer[bytes_written + 2] = pixel.red;
 
 			bytes_written += 3;
@@ -245,136 +246,108 @@ void write_pixel_array_red(std::ofstream& out, std::vector<std::vector<Pixel24_t
 	}
 }
 
-void write_pixel_array_green(std::ofstream& out, std::vector<std::vector<Pixel24_t>>& raw_pixel_array) {
-	int height = raw_pixel_array.size();
-	int width = raw_pixel_array.front().size();
+Pixel24_t grayscale_pixel(int i, int j, std::vector<std::vector<Pixel24_t>>& pixel_array) {
+	// using this algorithm for nice grayscale to human eye:
+	//		value = 0.3*red + 0.59*green + 0.11*blue
+	Pixel24_t pixel = pixel_array[i][j];
+	float gray_value_f = 0.3 * pixel.red + 0.59 * pixel.green + 0.11 * pixel.blue;
+	uint8_t gray_value = static_cast<int>(std::round(gray_value_f));
 
-
-	for (int i=0; i<height; i++) {
-		uint32_t bytes_written = 0;
-		char row_buffer[width * 3];
-		for (int j=0; j<width; j++) {
-			Pixel24_t pixel = raw_pixel_array[i][j];
-
-			// using this algorithm for nice grayscale to human eye:
-			//		value = 0.3*red + 0.59*green + 0.11*blue
-			float gray_value_f = 0.3 * pixel.red + 0.59 * pixel.green + 0.11 * pixel.blue;
-			uint8_t gray_value = static_cast<int>(std::round(gray_value_f));
-
-			// output gray bytes for 3 channels
-			row_buffer[bytes_written + 0] = 0;
-			row_buffer[bytes_written + 1] = pixel.green;
-			row_buffer[bytes_written + 2] = 0;
-
-			bytes_written += 3;
-		}
-
-		// write row
-		out.write(&row_buffer[0], width * 3);
-
-		// add padding bits
-		if (bytes_written % 4 != 0) {
-			write_padding(out, 4 - (bytes_written % 4));
-		}
-	}
+	return Pixel24_t(gray_value, gray_value, gray_value);
 }
 
-void write_pixel_array_blue(std::ofstream& out, std::vector<std::vector<Pixel24_t>>& raw_pixel_array) {
-	int height = raw_pixel_array.size();
-	int width = raw_pixel_array.front().size();
+// Pixel24_t blur(int i, int j, std::vector<std::vector<Pixel24_t>>& pixel_array) {
+// 	uint16_t red_total   = 0;
+// 	uint16_t green_total = 0;
+// 	uint16_t blue_total  = 0;
 
+// 	for (int32_t x=-1; x<=1; x++) {
+// 		for (int32_t y=-1; y<=1; y++) {
+// 			int32_t x_offset = static_cast<int32_t>(i) + x;
+// 			int32_t y_offset = static_cast<int32_t>(j) + y;
+// 			if (
+// 				(x_offset < 0 || x_offset >= std::ssize(pixel_array)) ||
+// 				(y_offset < 0 || y_offset >= std::ssize(pixel_array[i]))
+// 			) {
+// 				// pretend outside image is black
+// 				continue;
+// 			}
 
-	for (int i=0; i<height; i++) {
-		uint32_t bytes_written = 0;
-		char row_buffer[width * 3];
-		for (int j=0; j<width; j++) {
-			Pixel24_t pixel = raw_pixel_array[i][j];
+// 			Pixel24_t pixel = pixel_array[i+x][j+y];
+// 			red_total   += pixel.red;
+// 			green_total += pixel.green;
+// 			blue_total  += pixel.blue;
+// 		}
+// 	}
 
-			// using this algorithm for nice grayscale to human eye:
-			//		value = 0.3*red + 0.59*green + 0.11*blue
-			float gray_value_f = 0.3 * pixel.red + 0.59 * pixel.green + 0.11 * pixel.blue;
-			uint8_t gray_value = static_cast<int>(std::round(gray_value_f));
+// 	return Pixel24_t(red_total / 9, green_total / 9, blue_total /9);
+// }
 
-			// output gray bytes for 3 channels
-			row_buffer[bytes_written + 0] = pixel.blue;
-			row_buffer[bytes_written + 1] = 0;
-			row_buffer[bytes_written + 2] = 0;
+Pixel24_t box_blur_err(int i, int j, std::vector<std::vector<Pixel24_t>>& pixel_array) {
+	uint16_t red_total   = 0;
+	uint16_t green_total = 0;
+	uint16_t blue_total  = 0;
 
-			bytes_written += 3;
-		}
+	for (int32_t x=-4; x<=4; x++) {
+		for (int32_t y=-4; y<=4; y++) {
+			int32_t x_offset = static_cast<int32_t>(i) + x;
+			int32_t y_offset = static_cast<int32_t>(j) + y;
+			if (
+				(x_offset < 0 || x_offset >= std::ssize(pixel_array)) ||
+				(y_offset < 0 || y_offset >= std::ssize(pixel_array[i]))
+			) {
+				// pretend outside image is black
+				continue;
+			}
 
-		// write row
-		out.write(&row_buffer[0], width * 3);
-
-		// add padding bits
-		if (bytes_written % 4 != 0) {
-			write_padding(out, 4 - (bytes_written % 4));
-		}
-	}
-}
-void write_pixel_array_invert(std::ofstream& out, std::vector<std::vector<Pixel24_t>>& raw_pixel_array) {
-	int height = raw_pixel_array.size();
-	int width = raw_pixel_array.front().size();
-
-
-	for (int i=0; i<height; i++) {
-		uint32_t bytes_written = 0;
-		char row_buffer[width * 3];
-		for (int j=0; j<width; j++) {
-			Pixel24_t pixel = raw_pixel_array[i][j];
-
-			// using this algorithm for nice grayscale to human eye:
-			//		value = 0.3*red + 0.59*green + 0.11*blue
-			float gray_value_f = 0.3 * pixel.red + 0.59 * pixel.green + 0.11 * pixel.blue;
-			uint8_t gray_value = static_cast<int>(std::round(gray_value_f));
-
-			// output gray bytes for 3 channels
-			row_buffer[bytes_written + 0] = ~pixel.blue;
-			row_buffer[bytes_written + 1] = ~pixel.green;
-			row_buffer[bytes_written + 2] = ~pixel.red;
-
-			bytes_written += 3;
-		}
-
-		// write row
-		out.write(&row_buffer[0], width * 3);
-
-		// add padding bits
-		if (bytes_written % 4 != 0) {
-			write_padding(out, 4 - (bytes_written % 4));
+			Pixel24_t pixel = pixel_array[i+x][j+y];
+			red_total   += pixel.red;
+			green_total += pixel.green;
+			blue_total  += pixel.blue;
 		}
 	}
+
+	return Pixel24_t(red_total / 9, green_total / 9, blue_total / 9);
 }
-void write_pixel_array_bgr(std::ofstream& out, std::vector<std::vector<Pixel24_t>>& raw_pixel_array) {
-	int height = raw_pixel_array.size();
-	int width = raw_pixel_array.front().size();
 
+Pixel24_t box_blur(int i, int j, std::vector<std::vector<Pixel24_t>>& pixel_array) {
+	uint16_t red_total   = 0;
+	uint16_t green_total = 0;
+	uint16_t blue_total  = 0;
 
-	for (int i=0; i<height; i++) {
-		uint32_t bytes_written = 0;
-		char row_buffer[width * 3];
-		for (int j=0; j<width; j++) {
-			Pixel24_t pixel = raw_pixel_array[i][j];
+	for (int32_t x=-4; x<=4; x++) {
+		for (int32_t y=-4; y<=4; y++) {
+			int32_t x_offset = static_cast<int32_t>(i) + x;
+			int32_t y_offset = static_cast<int32_t>(j) + y;
+			if (
+				(x_offset < 0 || x_offset >= std::ssize(pixel_array)) ||
+				(y_offset < 0 || y_offset >= std::ssize(pixel_array[i]))
+			) {
+				// pretend outside image is black
+				continue;
+			}
 
-			// using this algorithm for nice grayscale to human eye:
-			//		value = 0.3*red + 0.59*green + 0.11*blue
-			float gray_value_f = 0.3 * pixel.red + 0.59 * pixel.green + 0.11 * pixel.blue;
-			uint8_t gray_value = static_cast<int>(std::round(gray_value_f));
-
-			// output gray bytes for 3 channels
-			row_buffer[bytes_written + 0] = pixel.red;
-			row_buffer[bytes_written + 1] = pixel.green;
-			row_buffer[bytes_written + 2] = pixel.blue;
-
-			bytes_written += 3;
-		}
-
-		// write row
-		out.write(&row_buffer[0], width * 3);
-
-		// add padding bits
-		if (bytes_written % 4 != 0) {
-			write_padding(out, 4 - (bytes_written % 4));
+			Pixel24_t pixel = pixel_array[i+x][j+y];
+			red_total   += pixel.red;
+			green_total += pixel.green;
+			blue_total  += pixel.blue;
 		}
 	}
+
+	return Pixel24_t(red_total / 81, green_total / 81, blue_total / 81);
 }
+
+Pixel24_t blue(int i, int j, std::vector<std::vector<Pixel24_t>>& pixel_array) {
+	Pixel24_t pixel = pixel_array[i][j];
+	return Pixel24_t(0, 0, pixel.blue);
+}
+
+// std::function<Pixel24_t(int,int,std::vector<std::vector<Pixel24_t>>&)> color_ratio(float r, float g, float b) {
+// 	return [=,=,&] (int i, int j, std::vector<std::vector<Pixel24_t>>&) {
+// 		Pixel24_t pixel = pixel_array[i][j];
+// 		float gray_value_f = 0.3 * pixel.red + 0.59 * pixel.green + 0.11 * pixel.blue;
+// 		uint8_t gray_value = static_cast<int>(std::round(gray_value_f));
+
+// 		return Pixel24_t(gray_value, gray_value, gray_value);
+// 	}
+// }
