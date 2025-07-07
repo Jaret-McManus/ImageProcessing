@@ -98,8 +98,6 @@ void set_pixel_array(std::vector<std::vector<Pixel24_t>>& pixel_array, std::uniq
 
 void write_headers(std::ofstream& out, std::ifstream& in, std::unique_ptr<BitmapHeader>& bm_hdr, std::unique_ptr<BitmapInfoHeader>& bm_info_hdr) {
 	in.seekg(0, std::ios::beg); // reset cursor
-
-	std::cout << std::format("in file at the start of write headers: {}\n", in.good());
 	
 	// write header
 	const int HEADER_BUF_SIZE = 14;
@@ -175,14 +173,6 @@ void write_padding(std::ofstream& out, int padding_len) {
 	out.write(&buf[0], padding_len);
 }
 
-void print_hex(int value) {
-	std::cout << std::hex;
-
-	std::cout << value;
-
-	std::cout << std::dec;
-}
-
 void write_pixel_array_grayscale(std::ofstream& out, std::vector<std::vector<Pixel24_t>>& pixel_array) {
 	int height = pixel_array.size();
 	int width  = pixel_array.front().size();
@@ -218,9 +208,10 @@ void write_pixel_array_grayscale(std::ofstream& out, std::vector<std::vector<Pix
 }
 
 void write_pixel_array(std::ofstream& out, std::vector<std::vector<Pixel24_t>>& pixel_array, std::function<Pixel24_t(int, int, std::vector<std::vector<Pixel24_t>>&)> calculate_pixel) {
-	int height = pixel_array.size();
-	int width  = pixel_array.front().size();
+	const auto start = std::chrono::steady_clock::now();
 
+	const int height = pixel_array.size();
+	const int width  = pixel_array.front().size();
 
 	for (int i=0; i<height; i++) {
 		uint32_t bytes_written = 0;
@@ -244,6 +235,47 @@ void write_pixel_array(std::ofstream& out, std::vector<std::vector<Pixel24_t>>& 
 			write_padding(out, 4 - (bytes_written % 4));
 		}
 	}
+	auto end = std::chrono::steady_clock::now();
+	std::chrono::duration<double> elapsed_seconds{end - start};
+	std::cout << std::format("Took {:.2}", elapsed_seconds) << std::endl;
+}
+
+void write_pixel_array_progress(std::ofstream& out, std::vector<std::vector<Pixel24_t>>& pixel_array, std::function<Pixel24_t(int, int, std::vector<std::vector<Pixel24_t>>&)> calculate_pixel) {
+	auto start = std::chrono::steady_clock::now();
+
+	const int height = pixel_array.size();
+	const int width  = pixel_array.front().size();
+
+	std::string spacing(14, '.');
+	std::cout << spacing << std::format("\rFile {:.2f}% processed", 0.0) << std::flush;
+	for (int i=0; i<height; i++) {
+		uint32_t bytes_written = 0;
+		char row_buffer[width * 3];
+		for (int j=0; j<width; j++) {
+			Pixel24_t pixel = calculate_pixel(i, j, pixel_array);
+
+			// output gray bytes for 3 channels
+			row_buffer[bytes_written + 0] = pixel.blue;
+			row_buffer[bytes_written + 1] = pixel.green;
+			row_buffer[bytes_written + 2] = pixel.red;
+
+			bytes_written += 3;
+		}
+
+		// write row
+		out.write(&row_buffer[0], width * 3);
+
+		// display progress
+		std::cout << spacing << std::format("\rFile {:.2f}% processed", static_cast<double>(i+1) * 100 / height);
+
+		// add padding bits
+		if (bytes_written % 4 != 0) {
+			write_padding(out, 4 - (bytes_written % 4));
+		}
+	}
+	auto end = std::chrono::steady_clock::now();
+	std::chrono::duration<double> elapsed_seconds{end - start};
+	std::cout << std::endl << std::format("Took {:.2}", elapsed_seconds) << std::endl;
 }
 
 Pixel24_t grayscale_pixel(int i, int j, std::vector<std::vector<Pixel24_t>>& pixel_array) {
@@ -255,33 +287,6 @@ Pixel24_t grayscale_pixel(int i, int j, std::vector<std::vector<Pixel24_t>>& pix
 
 	return Pixel24_t(gray_value, gray_value, gray_value);
 }
-
-// Pixel24_t blur(int i, int j, std::vector<std::vector<Pixel24_t>>& pixel_array) {
-// 	uint16_t red_total   = 0;
-// 	uint16_t green_total = 0;
-// 	uint16_t blue_total  = 0;
-
-// 	for (int32_t x=-1; x<=1; x++) {
-// 		for (int32_t y=-1; y<=1; y++) {
-// 			int32_t x_offset = static_cast<int32_t>(i) + x;
-// 			int32_t y_offset = static_cast<int32_t>(j) + y;
-// 			if (
-// 				(x_offset < 0 || x_offset >= std::ssize(pixel_array)) ||
-// 				(y_offset < 0 || y_offset >= std::ssize(pixel_array[i]))
-// 			) {
-// 				// pretend outside image is black
-// 				continue;
-// 			}
-
-// 			Pixel24_t pixel = pixel_array[i+x][j+y];
-// 			red_total   += pixel.red;
-// 			green_total += pixel.green;
-// 			blue_total  += pixel.blue;
-// 		}
-// 	}
-
-// 	return Pixel24_t(red_total / 9, green_total / 9, blue_total /9);
-// }
 
 Pixel24_t box_blur_err(int i, int j, std::vector<std::vector<Pixel24_t>>& pixel_array) {
 	uint16_t red_total   = 0;
@@ -337,38 +342,6 @@ Pixel24_t box_blur(int i, int j, std::vector<std::vector<Pixel24_t>>& pixel_arra
 	return Pixel24_t(red_total / 81, green_total / 81, blue_total / 81);
 }
 
-// std::function<Pixel24_t(int, int, std::vector<std::vector<Pixel24_t>>&)> box_blur_nxn(int radius) {
-	
-// 	return [=](int i, int j, std::vector<std::vector<Pixel24_t>>& pixel_array) {
-// 		uint16_t red_total   = 0;
-// 		uint16_t green_total = 0;
-// 		uint16_t blue_total  = 0;
-
-// 		uint16_t diameter = 2 * radius + 1;
-// 		uint16_t num_pixels = diameter * diameter;
-// 		for (int32_t x=-radius; x<=radius; x++) {
-// 			for (int32_t y=-radius; y<=radius; y++) {
-// 				int32_t x_offset = static_cast<int32_t>(i) + x;
-// 				int32_t y_offset = static_cast<int32_t>(j) + y;
-// 				if (
-// 					(x_offset < 0 || x_offset >= std::ssize(pixel_array)) ||
-// 					(y_offset < 0 || y_offset >= std::ssize(pixel_array[i]))
-// 				) {
-// 					// pretend outside image is black
-// 					continue;
-// 				}
-
-// 				Pixel24_t pixel = pixel_array[i+x][j+y];
-// 				red_total   += pixel.red;
-// 				green_total += pixel.green;
-// 				blue_total  += pixel.blue;
-// 			}
-// 		}
-
-// 		return Pixel24_t(red_total / num_pixels, green_total / num_pixels, blue_total / num_pixels);
-// 	};
-// }
-
 std::function<Pixel24_t(int, int, std::vector<std::vector<Pixel24_t>>&)> box_blur_nxn(int radius) {
 	
 	return [=](int i, int j, std::vector<std::vector<Pixel24_t>>& pixel_array) {
@@ -376,8 +349,7 @@ std::function<Pixel24_t(int, int, std::vector<std::vector<Pixel24_t>>&)> box_blu
 		double green_total = 0;
 		double blue_total  = 0;
 
-		uint32_t diameter = 2 * radius + 1;
-		uint32_t num_pixels = diameter * diameter;
+		uint32_t num_pixels = 0;
 		for (int32_t x=-radius; x<=radius; x++) {
 			for (int32_t y=-radius; y<=radius; y++) {
 				int32_t x_offset = static_cast<int32_t>(i) + x;
@@ -386,7 +358,7 @@ std::function<Pixel24_t(int, int, std::vector<std::vector<Pixel24_t>>&)> box_blu
 				bool x_out_of_bounds = x_offset < 0 || x_offset >= std::ssize(pixel_array);
 				bool y_out_of_bounds = y_offset < 0 || y_offset >= std::ssize(pixel_array[i]);
 				if (x_out_of_bounds || y_out_of_bounds) {
-					// pretend outside image is black
+					// skip to avoid segfault
 					continue;
 				}
 
@@ -394,6 +366,7 @@ std::function<Pixel24_t(int, int, std::vector<std::vector<Pixel24_t>>&)> box_blu
 				red_total   += pixel.red;
 				green_total += pixel.green;
 				blue_total  += pixel.blue;
+				num_pixels++;
 			}
 		}
 

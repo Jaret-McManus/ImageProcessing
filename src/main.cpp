@@ -15,7 +15,7 @@ int main (int argc, char *argv[]) {
 	std::ifstream file_stream (file_name, std::ios_base::binary | std::ios::in);
 
 	if (!file_stream.is_open()) {
-		std::cout << "Unable to open file" << std::endl;
+		std::cerr << "Unable to open file" << std::endl;
 		return 1;
 	}
 
@@ -66,7 +66,12 @@ int main (int argc, char *argv[]) {
 	write_headers(out_stream, file_stream, bm_hdr, bm_info_hdr);
 
 	// write pixel data
-	write_pixel_array(out_stream, pixel_array, func);
+	bool no_progress = false;
+	if (no_progress) {
+		write_pixel_array(out_stream, pixel_array, func);
+	} else {
+		write_pixel_array_progress(out_stream, pixel_array, func);
+	}
 
 	file_stream.close();
 	out_stream.close();
