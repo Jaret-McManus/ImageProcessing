@@ -25,7 +25,18 @@ int main (int argc, char *argv[]) {
 	if (argc == 3) {
 		func = grayscale_pixel;
 	} else if (function_arg == "--box-blur") {
-		func = box_blur;
+		if (argc == 5) {
+			char *end;
+			int radius = strtol(argv[4], &end, 10);
+			if (end == argv[4] || *end != '\0' || errno == ERANGE) {
+				std::cerr << std::format("Error converting {} to an integer for box blur radius!\n", argv[4]);
+				return 1;
+			}
+
+			func = box_blur_nxn(radius);
+		} else {
+			func = box_blur;
+		}
 	} else if (function_arg == "--box-blur-err") {
 		func = box_blur_err;
 	} else if (function_arg == "--gray") {
@@ -38,25 +49,23 @@ int main (int argc, char *argv[]) {
 	}
 
 	// read header
-	std::cout << std::format("in file good before header read?: {}\n", file_stream.good());
 	auto bm_hdr = read_bitmap_header(file_stream);
 	if (bm_hdr == nullptr) return 1;
 
-	std::cout << std::format("in file good before info header read?: {}\n", file_stream.good());
 	auto bm_info_hdr = read_bitmap_info_header(file_stream);
 	if (bm_info_hdr == NULL) return 1;
 
 	// std::cout << std::format("BM Header:\n{}\nBM info hdr:\n{}\n", bm_hdr->to_str(), bm_info_hdr->to_str());
 
 	// set pixel array
-	std::cout << std::format("in file good before pixel read?: {}\n", file_stream.good());
 	std::vector<std::vector<Pixel24_t>> pixel_array;
 	set_pixel_array(pixel_array, bm_hdr, bm_info_hdr, file_stream);
 
-	std::cout << std::format("in file good before writing headers: {}\n", file_stream.good());
+	// write new file with headers
 	std::ofstream out_stream(output_file_name, std::ios_base::binary | std::ios::out);
 	write_headers(out_stream, file_stream, bm_hdr, bm_info_hdr);
 
+	// write pixel data
 	write_pixel_array(out_stream, pixel_array, func);
 
 	file_stream.close();

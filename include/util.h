@@ -80,6 +80,7 @@ void write_pixel_array(std::ofstream& out, std::vector<std::vector<Pixel24_t>>& 
 Pixel24_t grayscale_pixel(int i, int j, std::vector<std::vector<Pixel24_t>>& pixel_array);
 Pixel24_t box_blur(int i, int j, std::vector<std::vector<Pixel24_t>>& pixel_array);
 Pixel24_t box_blur_err(int i, int j, std::vector<std::vector<Pixel24_t>>& pixel_array);
+std::function<Pixel24_t(int, int, std::vector<std::vector<Pixel24_t>>&)> box_blur_nxn(int radius);
 Pixel24_t blue(int i, int j, std::vector<std::vector<Pixel24_t>>& pixel_array);
 
 // printing functions

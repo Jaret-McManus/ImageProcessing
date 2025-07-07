@@ -337,6 +337,74 @@ Pixel24_t box_blur(int i, int j, std::vector<std::vector<Pixel24_t>>& pixel_arra
 	return Pixel24_t(red_total / 81, green_total / 81, blue_total / 81);
 }
 
+// std::function<Pixel24_t(int, int, std::vector<std::vector<Pixel24_t>>&)> box_blur_nxn(int radius) {
+	
+// 	return [=](int i, int j, std::vector<std::vector<Pixel24_t>>& pixel_array) {
+// 		uint16_t red_total   = 0;
+// 		uint16_t green_total = 0;
+// 		uint16_t blue_total  = 0;
+
+// 		uint16_t diameter = 2 * radius + 1;
+// 		uint16_t num_pixels = diameter * diameter;
+// 		for (int32_t x=-radius; x<=radius; x++) {
+// 			for (int32_t y=-radius; y<=radius; y++) {
+// 				int32_t x_offset = static_cast<int32_t>(i) + x;
+// 				int32_t y_offset = static_cast<int32_t>(j) + y;
+// 				if (
+// 					(x_offset < 0 || x_offset >= std::ssize(pixel_array)) ||
+// 					(y_offset < 0 || y_offset >= std::ssize(pixel_array[i]))
+// 				) {
+// 					// pretend outside image is black
+// 					continue;
+// 				}
+
+// 				Pixel24_t pixel = pixel_array[i+x][j+y];
+// 				red_total   += pixel.red;
+// 				green_total += pixel.green;
+// 				blue_total  += pixel.blue;
+// 			}
+// 		}
+
+// 		return Pixel24_t(red_total / num_pixels, green_total / num_pixels, blue_total / num_pixels);
+// 	};
+// }
+
+std::function<Pixel24_t(int, int, std::vector<std::vector<Pixel24_t>>&)> box_blur_nxn(int radius) {
+	
+	return [=](int i, int j, std::vector<std::vector<Pixel24_t>>& pixel_array) {
+		double red_total   = 0;
+		double green_total = 0;
+		double blue_total  = 0;
+
+		uint32_t diameter = 2 * radius + 1;
+		uint32_t num_pixels = diameter * diameter;
+		for (int32_t x=-radius; x<=radius; x++) {
+			for (int32_t y=-radius; y<=radius; y++) {
+				int32_t x_offset = static_cast<int32_t>(i) + x;
+				int32_t y_offset = static_cast<int32_t>(j) + y;
+
+				bool x_out_of_bounds = x_offset < 0 || x_offset >= std::ssize(pixel_array);
+				bool y_out_of_bounds = y_offset < 0 || y_offset >= std::ssize(pixel_array[i]);
+				if (x_out_of_bounds || y_out_of_bounds) {
+					// pretend outside image is black
+					continue;
+				}
+
+				Pixel24_t pixel = pixel_array[i+x][j+y];
+				red_total   += pixel.red;
+				green_total += pixel.green;
+				blue_total  += pixel.blue;
+			}
+		}
+
+		return Pixel24_t(
+			static_cast<uint8_t>(red_total / num_pixels),
+			static_cast<uint8_t>(green_total / num_pixels),
+			static_cast<uint8_t>(blue_total / num_pixels)
+		);
+	};
+}
+
 Pixel24_t blue(int i, int j, std::vector<std::vector<Pixel24_t>>& pixel_array) {
 	Pixel24_t pixel = pixel_array[i][j];
 	return Pixel24_t(0, 0, pixel.blue);
