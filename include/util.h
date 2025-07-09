@@ -1,12 +1,11 @@
 #include <iostream>
 #include <cstdint>
 #include <memory>
-#include <vector>
 #include <format>
 #include <cmath>
 #include <cstring>
-#include <functional>
 #include <chrono>
+#include "pixel.h"
 
 struct BitmapHeader {
 	std::string header_field;
@@ -44,22 +43,6 @@ struct BitmapInfoHeader {
 	}
 };
 
-struct Pixel24_t{
-	uint8_t red;
-	uint8_t green;
-	uint8_t blue;
-
-	Pixel24_t(uint8_t r, uint8_t g, uint8_t b) : red(r), green(g), blue(b) {}
-
-	std::string to_str() {
-		return std::format("({}, {}, {})", red, green, blue);
-	}
-
-	std::string to_str_hex() {
-		return std::format("({:x}, {:x}, {:x})", red, green, blue);
-	}
-};
-
 std::unique_ptr<BitmapHeader> read_bitmap_header(std::ifstream& file);
 std::unique_ptr<BitmapInfoHeader> read_bitmap_info_header(std::ifstream& file);
 void set_pixel_array(std::vector<std::vector<Pixel24_t>>& pixel_array, std::unique_ptr<BitmapHeader>& bm_hdr, std::unique_ptr<BitmapInfoHeader>& bm_info_hdr, std::ifstream& file);
@@ -77,10 +60,3 @@ void write_padding(std::ofstream& out, int padding_len);
 void write_pixel_array_grayscale(std::ofstream& out, std::vector<std::vector<Pixel24_t>>& pixel_array);
 void write_pixel_array(std::ofstream& out, std::vector<std::vector<Pixel24_t>>& pixel_array, std::function<Pixel24_t(int, int, std::vector<std::vector<Pixel24_t>>&)> calculate_pixel);
 void write_pixel_array_progress(std::ofstream& out, std::vector<std::vector<Pixel24_t>>& pixel_array, std::function<Pixel24_t(int, int, std::vector<std::vector<Pixel24_t>>&)> calculate_pixel);
-
-// pixel functions
-Pixel24_t grayscale_pixel(int i, int j, std::vector<std::vector<Pixel24_t>>& pixel_array);
-Pixel24_t box_blur(int i, int j, std::vector<std::vector<Pixel24_t>>& pixel_array);
-Pixel24_t box_blur_err(int i, int j, std::vector<std::vector<Pixel24_t>>& pixel_array);
-std::function<Pixel24_t(int, int, std::vector<std::vector<Pixel24_t>>&)> box_blur_nxn(int radius);
-Pixel24_t blue(int i, int j, std::vector<std::vector<Pixel24_t>>& pixel_array);

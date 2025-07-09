@@ -1,6 +1,5 @@
 #include <iostream>
 #include <fstream>
-#include <vector>
 #include <format>
 #include "util.h"
 
@@ -22,27 +21,31 @@ int main (int argc, char *argv[]) {
 	// choose function
 	std::function<Pixel24_t(int, int, std::vector<std::vector<Pixel24_t>>&)> func;
 	std::string function_arg = argv[3] ? std::string(argv[3]) : "";
-	if (argc == 3) {
-		func = grayscale_pixel;
-	} else if (function_arg == "--box-blur") {
-		if (argc == 5) {
+	int curr_arg = 4; // just read the 4rd arg, possibly more 
+	if (function_arg == "--box-blur") {
+		if (argc >= 5) {
 			char *end;
 			int radius = strtol(argv[4], &end, 10);
 			if (end == argv[4] || *end != '\0' || errno == ERANGE) {
-				std::cerr << std::format("Error converting {} to an integer for box blur radius!\n", argv[4]);
+				std::cerr << std::format("Error converting '{}' to an integer for box blur radius!\n", argv[4]);
 				return 1;
 			}
 
-			func = box_blur_nxn(radius);
+			func = box_blur_radius(radius);
+			curr_arg++;
 		} else {
 			func = box_blur;
 		}
 	} else if (function_arg == "--box-blur-err") {
 		func = box_blur_err;
 	} else if (function_arg == "--gray") {
-		func = grayscale_pixel;
+		func = grayscale;
 	} else if (function_arg == "--blue") {
 		func = blue;
+	} else if (function_arg == "--green") {
+		func = green;
+	} else if (function_arg == "--red") {
+		func = red;
 	} else {
 		std::cerr << std::format("Invalid function flag!: ({})\n", argv[3]);
 		return 1;
