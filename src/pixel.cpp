@@ -1,7 +1,8 @@
 #include "pixel.h"
 
-std::function<Pixel24_t(int,int,std::vector<std::vector<Pixel24_t>>&)> color_ratio(float r, float g, float b) {
-	return [=] (int i, int j, std::vector<std::vector<Pixel24_t>>& pixel_array) {
+// color functions
+std::function<Pixel24_t(int,int,Matrix_t<Pixel24_t>&)> color_ratio(float r, float g, float b) {
+	return [=] (int i, int j, Matrix_t<Pixel24_t>& pixel_array) {
 		Pixel24_t pixel = pixel_array[i][j];
 
 		return Pixel24_t(
@@ -12,19 +13,19 @@ std::function<Pixel24_t(int,int,std::vector<std::vector<Pixel24_t>>&)> color_rat
 	};
 }
 
-Pixel24_t red(int i, int j, std::vector<std::vector<Pixel24_t>>& pixel_array) {
+Pixel24_t red(int i, int j, Matrix_t<Pixel24_t>& pixel_array) {
 	return color_ratio(1.0, 0.0, 0.0)(i, j, pixel_array);
 }
 
-Pixel24_t green(int i, int j, std::vector<std::vector<Pixel24_t>>& pixel_array) {
+Pixel24_t green(int i, int j, Matrix_t<Pixel24_t>& pixel_array) {
 	return color_ratio(0.0, 1.0, 0.0)(i, j, pixel_array);
 }
 
-Pixel24_t blue(int i, int j, std::vector<std::vector<Pixel24_t>>& pixel_array) {
+Pixel24_t blue(int i, int j, Matrix_t<Pixel24_t>& pixel_array) {
 	return color_ratio(0.0, 0.0, 1.0)(i, j, pixel_array);
 }
 
-Pixel24_t grayscale(int i, int j, std::vector<std::vector<Pixel24_t>>& pixel_array) {
+Pixel24_t grayscale(int i, int j, Matrix_t<Pixel24_t>& pixel_array) {
 	// using this algorithm for nice grayscale to human eye:
 	//		value = 0.3*red + 0.59*green + 0.11*blue
     Pixel24_t pixel = pixel_array[i][j];
@@ -35,9 +36,9 @@ Pixel24_t grayscale(int i, int j, std::vector<std::vector<Pixel24_t>>& pixel_arr
 }
 
 // blur funcs
-std::function<Pixel24_t(int, int, std::vector<std::vector<Pixel24_t>>&)> box_blur_radius(int radius) {
+std::function<Pixel24_t(int, int, Matrix_t<Pixel24_t>&)> box_blur_radius(int radius) {
 	
-	return [=](int i, int j, std::vector<std::vector<Pixel24_t>>& pixel_array) {
+	return [=](int i, int j, Matrix_t<Pixel24_t>& pixel_array) {
 		double red_total   = 0;
 		double green_total = 0;
 		double blue_total  = 0;
@@ -71,7 +72,7 @@ std::function<Pixel24_t(int, int, std::vector<std::vector<Pixel24_t>>&)> box_blu
 	};
 }
 
-Pixel24_t box_blur(int i, int j, std::vector<std::vector<Pixel24_t>>& pixel_array) {
+Pixel24_t box_blur(int i, int j, Matrix_t<Pixel24_t>& pixel_array) {
 	uint16_t red_total   = 0;
 	uint16_t green_total = 0;
 	uint16_t blue_total  = 0;
@@ -98,7 +99,7 @@ Pixel24_t box_blur(int i, int j, std::vector<std::vector<Pixel24_t>>& pixel_arra
 	return Pixel24_t(red_total / 81, green_total / 81, blue_total / 81);
 }
 
-Pixel24_t box_blur_err(int i, int j, std::vector<std::vector<Pixel24_t>>& pixel_array) {
+Pixel24_t box_blur_err(int i, int j, Matrix_t<Pixel24_t>& pixel_array) {
 	uint16_t red_total   = 0;
 	uint16_t green_total = 0;
 	uint16_t blue_total  = 0;
@@ -124,3 +125,5 @@ Pixel24_t box_blur_err(int i, int j, std::vector<std::vector<Pixel24_t>>& pixel_
 
 	return Pixel24_t(red_total / 9, green_total / 9, blue_total / 9);
 }
+
+// matrix functions

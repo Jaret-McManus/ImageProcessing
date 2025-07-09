@@ -19,7 +19,7 @@ int main (int argc, char *argv[]) {
 	}
 
 	// choose function
-	std::function<Pixel24_t(int, int, std::vector<std::vector<Pixel24_t>>&)> func;
+	std::function<Pixel24_t(int, int, Matrix_t<Pixel24_t>&)> func;
 	std::string function_arg = argv[3] ? std::string(argv[3]) : "";
 	int curr_arg = 4; // just read the 4rd arg, possibly more 
 	if (function_arg == "--box-blur") {
@@ -61,7 +61,7 @@ int main (int argc, char *argv[]) {
 	// std::cout << std::format("BM Header:\n{}\nBM info hdr:\n{}\n", bm_hdr->to_str(), bm_info_hdr->to_str());
 
 	// set pixel array
-	std::vector<std::vector<Pixel24_t>> pixel_array;
+	Matrix_t<Pixel24_t> pixel_array;
 	set_pixel_array(pixel_array, bm_hdr, bm_info_hdr, file_stream);
 
 	// write new file with headers

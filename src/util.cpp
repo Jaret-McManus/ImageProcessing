@@ -65,7 +65,7 @@ std::unique_ptr<BitmapInfoHeader> read_bitmap_info_header(std::ifstream& file) {
 	return std::make_unique<BitmapInfoHeader>(bm_info_hdr);
 }
 
-void set_pixel_array(std::vector<std::vector<Pixel24_t>>& pixel_array, std::unique_ptr<BitmapHeader>& bm_hdr, std::unique_ptr<BitmapInfoHeader>& bm_info_hdr, std::ifstream& file) {
+void set_pixel_array(Matrix_t<Pixel24_t>& pixel_array, std::unique_ptr<BitmapHeader>& bm_hdr, std::unique_ptr<BitmapInfoHeader>& bm_info_hdr, std::ifstream& file) {
 	pixel_array.reserve(bm_info_hdr->height); // reserve pixel columns
 
 	// seek to start of pixel data
@@ -173,7 +173,7 @@ void write_padding(std::ofstream& out, int padding_len) {
 	out.write(&buf[0], padding_len);
 }
 
-void write_pixel_array(std::ofstream& out, std::vector<std::vector<Pixel24_t>>& pixel_array, std::function<Pixel24_t(int, int, std::vector<std::vector<Pixel24_t>>&)> calculate_pixel) {
+void write_pixel_array(std::ofstream& out, Matrix_t<Pixel24_t>& pixel_array, std::function<Pixel24_t(int, int, Matrix_t<Pixel24_t>&)> calculate_pixel) {
 	const auto start = std::chrono::steady_clock::now();
 
 	const int height = pixel_array.size();
@@ -206,7 +206,7 @@ void write_pixel_array(std::ofstream& out, std::vector<std::vector<Pixel24_t>>& 
 	std::cout << std::format("Took {:.2}", elapsed_seconds) << std::endl;
 }
 
-void write_pixel_array_progress(std::ofstream& out, std::vector<std::vector<Pixel24_t>>& pixel_array, std::function<Pixel24_t(int, int, std::vector<std::vector<Pixel24_t>>&)> calculate_pixel) {
+void write_pixel_array_progress(std::ofstream& out, Matrix_t<Pixel24_t>& pixel_array, std::function<Pixel24_t(int, int, Matrix_t<Pixel24_t>&)> calculate_pixel) {
 	auto start = std::chrono::steady_clock::now();
 
 	const int height = pixel_array.size();

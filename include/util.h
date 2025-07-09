@@ -45,7 +45,7 @@ struct BitmapInfoHeader {
 
 std::unique_ptr<BitmapHeader> read_bitmap_header(std::ifstream& file);
 std::unique_ptr<BitmapInfoHeader> read_bitmap_info_header(std::ifstream& file);
-void set_pixel_array(std::vector<std::vector<Pixel24_t>>& pixel_array, std::unique_ptr<BitmapHeader>& bm_hdr, std::unique_ptr<BitmapInfoHeader>& bm_info_hdr, std::ifstream& file);
+void set_pixel_array(Matrix_t<Pixel24_t>& pixel_array, std::unique_ptr<BitmapHeader>& bm_hdr, std::unique_ptr<BitmapInfoHeader>& bm_info_hdr, std::ifstream& file);
 
 // reading functions
 uint8_t read_byte(std::ifstream& file);
@@ -57,6 +57,6 @@ int skip_n_bytes(std::ifstream& file, int bytes);
 void write_headers(std::ofstream& out, std::ifstream& in, std::unique_ptr<BitmapHeader>& bm_hdr, std::unique_ptr<BitmapInfoHeader>& bm_info_hdr);
 void write_n_bytes(std::ofstream& out, std::ifstream& in, int num_bytes);
 void write_padding(std::ofstream& out, int padding_len);
-void write_pixel_array_grayscale(std::ofstream& out, std::vector<std::vector<Pixel24_t>>& pixel_array);
-void write_pixel_array(std::ofstream& out, std::vector<std::vector<Pixel24_t>>& pixel_array, std::function<Pixel24_t(int, int, std::vector<std::vector<Pixel24_t>>&)> calculate_pixel);
-void write_pixel_array_progress(std::ofstream& out, std::vector<std::vector<Pixel24_t>>& pixel_array, std::function<Pixel24_t(int, int, std::vector<std::vector<Pixel24_t>>&)> calculate_pixel);
+void write_pixel_array_grayscale(std::ofstream& out, Matrix_t<Pixel24_t>& pixel_array);
+void write_pixel_array(std::ofstream& out, Matrix_t<Pixel24_t>& pixel_array, std::function<Pixel24_t(int, int, Matrix_t<Pixel24_t>&)> calculate_pixel);
+void write_pixel_array_progress(std::ofstream& out, Matrix_t<Pixel24_t>& pixel_array, std::function<Pixel24_t(int, int, Matrix_t<Pixel24_t>&)> calculate_pixel);
