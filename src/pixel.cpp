@@ -137,8 +137,6 @@ std::function<Pixel24_t(int, int, Matrix_t<Pixel24_t>&)> apply_matrix_extend(Mat
     return [=, &kernel] (int i, int j, Matrix_t<Pixel24_t>& pixel_array) {
         int32_t img_width  = std::ssize(pixel_array);
         int32_t img_height = std::ssize(pixel_array.front());
-        if(i ==0 && j==0)
-        std::cout << std::format("Image is {}x{}\n", img_width, img_height);
 
         double red_total   = 0.0;
         double green_total = 0.0;
@@ -178,3 +176,21 @@ Pixel24_t identity(int i, int j, Matrix_t<Pixel24_t>& pixel_array) {
     };
     return apply_matrix_extend(identity_matrix)(i, j, pixel_array);
 }
+
+Pixel24_t edge_detect(int i, int j, Matrix_t<Pixel24_t>& pixel_array) {
+    static Matrix_t<double> edge_matrix = {
+        {-1.0, -1.0, -1.0},
+        {-1.0, +8.0, -1.0},
+        {-1.0, -1.0, -1.0}
+    };
+    return apply_matrix_extend(edge_matrix)(i, j, pixel_array);
+}
+
+// Pixel24_t edge_detect(int i, int j, Matrix_t<Pixel24_t>& pixel_array) {
+//     static Matrix_t<double> edge_matrix = {
+//         { 0.0, -1.0,  0.0},
+//         {-1.0, +4.0, -1.0},
+//         { 0.0, -1.0,  0.0}
+//     };
+//     return apply_matrix_extend(edge_matrix)(i, j, pixel_array);
+// }

@@ -93,8 +93,6 @@ void set_pixel_array(Matrix_t<Pixel24_t>& pixel_array, std::unique_ptr<BitmapHea
 		if (bytes_read % 4)
 			skip_n_bytes(file, 4 - (bytes_read % 4));
 	}
-
-	std::cout << std::format("p array: {}x{}\n", std::ssize(pixel_array), std::ssize(pixel_array.front()));
 }
 
 void write_headers(std::ofstream& out, std::ifstream& in, std::unique_ptr<BitmapHeader>& bm_hdr, std::unique_ptr<BitmapInfoHeader>& bm_info_hdr) {
@@ -213,7 +211,6 @@ void write_pixel_array_progress(std::ofstream& out, Matrix_t<Pixel24_t>& pixel_a
 	const int32_t width  = pixel_array.size();
 	const int32_t height = pixel_array.front().size();
 
-	std::cout << std::format("write output size {}x{}\n", width, height);
 	std::string spacing(14, '.');
 	std::cout << spacing << std::format("\rFile {:.2f}% processed", 0.0) << std::flush;
 	for (int32_t y=0; y<height; y++) {

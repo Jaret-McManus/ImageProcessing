@@ -7,6 +7,18 @@
 template<class T>
 using Matrix_t = std::vector<std::vector<T>>;
 
+template<class T>
+Matrix_t<T> operator*(T scalar, Matrix_t<T>& matrix) {
+	Matrix_t<T> product = matrix;
+	for (auto& row : product) {
+		for (auto& elem : row) {
+			elem *= scalar;
+		}
+	}
+
+	return product;
+}
+
 struct Pixel24_t {
 	uint8_t red;
 	uint8_t green;
@@ -39,3 +51,4 @@ Pixel24_t box_blur_err(int i, int j, Matrix_t<Pixel24_t>& pixel_array);
 // matrix funcs
 std::function<Pixel24_t(int, int, Matrix_t<Pixel24_t>&)> apply_matrix_extend(Matrix_t<double> kernel);
 Pixel24_t identity(int i, int j, Matrix_t<Pixel24_t>& pixel_array);
+Pixel24_t edge_detect(int i, int j, Matrix_t<Pixel24_t>& pixel_array);

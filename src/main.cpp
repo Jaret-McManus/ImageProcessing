@@ -18,6 +18,15 @@ int main (int argc, char *argv[]) {
 		return 1;
 	}
 
+	if (std::string(argv[2]) == "--info") {
+		auto bm_hdr = read_bitmap_header(file_stream);
+		auto bm_info_hdr = read_bitmap_info_header(file_stream);
+
+		std::cout << std::format("BM header: {}\n\n", bm_hdr->to_str());
+		std::cout << std::format("BM info header: {}\n\n", bm_info_hdr->to_str());
+		return 0;
+	}
+
 	// choose function
 	std::function<Pixel24_t(int, int, Matrix_t<Pixel24_t>&)> func;
 	std::string function_arg = argv[3] ? std::string(argv[3]) : "";
@@ -48,6 +57,8 @@ int main (int argc, char *argv[]) {
 		func = red;
 	} else if (function_arg == "--identity") {
 		func = identity;
+	} else if (function_arg == "--edge") {
+		func = edge_detect;
 	} else {
 		std::cerr << std::format("Invalid function flag!: ({})\n", argv[3]);
 		return 1;
