@@ -137,6 +137,7 @@ std::function<Pixel24_t(int, int, Matrix_t<Pixel24_t>&)> apply_matrix_extend(Mat
     return [=, &kernel] (int i, int j, Matrix_t<Pixel24_t>& pixel_array) {
         int32_t img_width  = std::ssize(pixel_array);
         int32_t img_height = std::ssize(pixel_array.front());
+        if(i ==0 && j==0)
         std::cout << std::format("Image is {}x{}\n", img_width, img_height);
 
         double red_total   = 0.0;
@@ -146,7 +147,6 @@ std::function<Pixel24_t(int, int, Matrix_t<Pixel24_t>&)> apply_matrix_extend(Mat
             for (int32_t col = 0; col < height; col++) {
                 // actual indices
                 int32_t x = -width/2 + row + i, y = -height/2 + col + j;
-                std::cout << std::format("[{}][{}]\n", x, y);
                 
                 // handle edge cases
                 x = (x < 0) ? 0 : x;                        // snap to left if x < 0
@@ -154,8 +154,7 @@ std::function<Pixel24_t(int, int, Matrix_t<Pixel24_t>&)> apply_matrix_extend(Mat
 
                 y = (y < 0) ? 0 : y;                            // snap to top if y < 0
                 y = (y >= img_height) ? (img_height - 1) : y;   //snap to bottom
-
-                std::cout << std::format("before accessing [{}][{}]\n\n", x, y);
+            
                 Pixel24_t pixel = pixel_array[x][y];
                 red_total   += kernel[row][col] * pixel.red;
                 green_total += kernel[row][col] * pixel.green;

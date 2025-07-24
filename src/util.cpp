@@ -66,27 +66,26 @@ std::unique_ptr<BitmapInfoHeader> read_bitmap_info_header(std::ifstream& file) {
 }
 
 void set_pixel_array(Matrix_t<Pixel24_t>& pixel_array, std::unique_ptr<BitmapHeader>& bm_hdr, std::unique_ptr<BitmapInfoHeader>& bm_info_hdr, std::ifstream& file) {
-	pixel_array.reserve(bm_info_hdr->height); // reserve pixel columns
+	// reserve space for image data
+	pixel_array.resize(bm_info_hdr->width); // reserve vector that holds columns
+	for (uint32_t col=0; col<bm_info_hdr->width; col++) {
+		pixel_array[col].resize(bm_info_hdr->height);
+	}
 
 	// seek to start of pixel data
 	file.seekg(bm_hdr->offset, std::ios::beg);
 
 	// start reading
-	for (uint i=0; i<bm_info_hdr->height; i++) {
+	for (uint32_t y=0; y<bm_info_hdr->height; y++) {
 		uint32_t bytes_read = 0;
-
-		pixel_array.emplace_back();
-		auto& pixel_row = pixel_array.back();
-		pixel_row.reserve(bm_info_hdr->width); // reserve pixel row
-
-		for (uint j=0; j<bm_info_hdr->width; j++) {
+		for (uint32_t x=0; x<bm_info_hdr->width; x++) {
 			uint8_t  blue = read_byte(file);
 			uint8_t green = read_byte(file);
 			uint8_t   red = read_byte(file);
 
 			Pixel24_t pixel(red, green, blue);
 
-			pixel_row.push_back(pixel);
+			pixel_array[x][y] = pixel;
 			bytes_read += 3; // 3 bytes per pixel
 		}
 
@@ -94,6 +93,8 @@ void set_pixel_array(Matrix_t<Pixel24_t>& pixel_array, std::unique_ptr<BitmapHea
 		if (bytes_read % 4)
 			skip_n_bytes(file, 4 - (bytes_read % 4));
 	}
+
+	std::cout << std::format("p array: {}x{}\n", std::ssize(pixel_array), std::ssize(pixel_array.front()));
 }
 
 void write_headers(std::ofstream& out, std::ifstream& in, std::unique_ptr<BitmapHeader>& bm_hdr, std::unique_ptr<BitmapInfoHeader>& bm_info_hdr) {
@@ -209,16 +210,17 @@ void write_pixel_array(std::ofstream& out, Matrix_t<Pixel24_t>& pixel_array, std
 void write_pixel_array_progress(std::ofstream& out, Matrix_t<Pixel24_t>& pixel_array, std::function<Pixel24_t(int, int, Matrix_t<Pixel24_t>&)> calculate_pixel) {
 	auto start = std::chrono::steady_clock::now();
 
-	const int height = pixel_array.size();
-	const int width  = pixel_array.front().size();
+	const int32_t width  = pixel_array.size();
+	const int32_t height = pixel_array.front().size();
 
+	std::cout << std::format("write output size {}x{}\n", width, height);
 	std::string spacing(14, '.');
 	std::cout << spacing << std::format("\rFile {:.2f}% processed", 0.0) << std::flush;
-	for (int i=0; i<height; i++) {
+	for (int32_t y=0; y<height; y++) {
 		uint32_t bytes_written = 0;
 		char row_buffer[width * 3];
-		for (int j=0; j<width; j++) {
-			Pixel24_t pixel = calculate_pixel(i, j, pixel_array);
+		for (int32_t x=0; x<width; x++) {
+			Pixel24_t pixel = calculate_pixel(x, y, pixel_array);
 
 			// output gray bytes for 3 channels
 			row_buffer[bytes_written + 0] = pixel.blue;
@@ -232,7 +234,7 @@ void write_pixel_array_progress(std::ofstream& out, Matrix_t<Pixel24_t>& pixel_a
 		out.write(&row_buffer[0], width * 3);
 
 		// display progress
-		std::cout << spacing << std::format("\rFile {:.2f}% processed", static_cast<double>(i+1) * 100 / height);
+		std::cout << spacing << std::format("\rFile {:.2f}% processed", static_cast<double>(y+1) * 100 / height);
 
 		// add padding bits
 		if (bytes_written % 4 != 0) {

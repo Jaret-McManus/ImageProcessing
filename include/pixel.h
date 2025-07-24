@@ -12,6 +12,7 @@ struct Pixel24_t {
 	uint8_t green;
 	uint8_t blue;
 
+	Pixel24_t() : red(0), green(0), blue(0) {}
 	Pixel24_t(uint8_t r, uint8_t g, uint8_t b) : red(r), green(g), blue(b) {}
 
 	std::string to_str() {
