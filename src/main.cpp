@@ -46,6 +46,8 @@ int main (int argc, char *argv[]) {
 		func = green;
 	} else if (function_arg == "--red") {
 		func = red;
+	} else if (function_arg == "--identity") {
+		func = identity;
 	} else {
 		std::cerr << std::format("Invalid function flag!: ({})\n", argv[3]);
 		return 1;

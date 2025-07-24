@@ -1,3 +1,4 @@
+#include <iostream>
 #include "pixel.h"
 
 // color functions
@@ -127,3 +128,54 @@ Pixel24_t box_blur_err(int i, int j, Matrix_t<Pixel24_t>& pixel_array) {
 }
 
 // matrix functions
+/* Convolve matrix: out of bounds pixels are retreived by extending the image's border pixels */
+std::function<Pixel24_t(int, int, Matrix_t<Pixel24_t>&)> apply_matrix_extend(Matrix_t<double> kernel) {
+    int width = std::ssize(kernel);
+    int height = std::ssize(kernel.front());
+    int num_cells = width * height;
+
+    return [=, &kernel] (int i, int j, Matrix_t<Pixel24_t>& pixel_array) {
+        int32_t img_width  = std::ssize(pixel_array);
+        int32_t img_height = std::ssize(pixel_array.front());
+        std::cout << std::format("Image is {}x{}\n", img_width, img_height);
+
+        double red_total   = 0.0;
+        double green_total = 0.0;
+        double blue_total  = 0.0;
+        for (int32_t row = 0; row < width; row++) {
+            for (int32_t col = 0; col < height; col++) {
+                // actual indices
+                int32_t x = -width/2 + row + i, y = -height/2 + col + j;
+                std::cout << std::format("[{}][{}]\n", x, y);
+                
+                // handle edge cases
+                x = (x < 0) ? 0 : x;                        // snap to left if x < 0
+                x = (x >= img_width) ? (img_width - 1) : x; // snap to right
+
+                y = (y < 0) ? 0 : y;                            // snap to top if y < 0
+                y = (y >= img_height) ? (img_height - 1) : y;   //snap to bottom
+
+                std::cout << std::format("before accessing [{}][{}]\n\n", x, y);
+                Pixel24_t pixel = pixel_array[x][y];
+                red_total   += kernel[row][col] * pixel.red;
+                green_total += kernel[row][col] * pixel.green;
+                blue_total  += kernel[row][col] * pixel.blue;
+            }
+        }
+
+        return Pixel24_t(
+            static_cast<int>(std::round(red_total)), 
+            static_cast<int>(std::round(green_total)), 
+            static_cast<int>(std::round(blue_total))
+        );
+    };
+}
+
+Pixel24_t identity(int i, int j, Matrix_t<Pixel24_t>& pixel_array) {
+    static Matrix_t<double> identity_matrix = {
+        {0.0, 0.0, 0.0},
+        {0.0, 1.0, 0.0},
+        {0.0, 0.0, 0.0}
+    };
+    return apply_matrix_extend(identity_matrix)(i, j, pixel_array);
+}

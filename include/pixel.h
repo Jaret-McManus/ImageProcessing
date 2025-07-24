@@ -34,3 +34,7 @@ Pixel24_t grayscale(int i, int j, Matrix_t<Pixel24_t>& pixel_array);
 std::function<Pixel24_t(int, int, Matrix_t<Pixel24_t>&)> box_blur_radius(int radius);
 Pixel24_t box_blur(int i, int j, Matrix_t<Pixel24_t>& pixel_array);
 Pixel24_t box_blur_err(int i, int j, Matrix_t<Pixel24_t>& pixel_array);
+
+// matrix funcs
+std::function<Pixel24_t(int, int, Matrix_t<Pixel24_t>&)> apply_matrix_extend(Matrix_t<double> kernel);
+Pixel24_t identity(int i, int j, Matrix_t<Pixel24_t>& pixel_array);
