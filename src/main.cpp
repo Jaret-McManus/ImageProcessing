@@ -59,6 +59,8 @@ int main (int argc, char *argv[]) {
 		func = identity;
 	} else if (function_arg == "--edge") {
 		func = edge_detect;
+	} else if (function_arg == "--gaussian-blur") {
+		func = gaussian_blur5x5;
 	} else {
 		std::cerr << std::format("Invalid function flag!: ({})\n", argv[3]);
 		return 1;

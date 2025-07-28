@@ -38,7 +38,7 @@ Pixel24_t grayscale(int i, int j, Matrix_t<Pixel24_t>& pixel_array) {
 
 // blur funcs
 std::function<Pixel24_t(int, int, Matrix_t<Pixel24_t>&)> box_blur_radius(int radius) {
-	
+
 	return [=](int i, int j, Matrix_t<Pixel24_t>& pixel_array) {
 		double red_total   = 0;
 		double green_total = 0;
@@ -194,3 +194,25 @@ Pixel24_t edge_detect(int i, int j, Matrix_t<Pixel24_t>& pixel_array) {
 //     };
 //     return apply_matrix_extend(edge_matrix)(i, j, pixel_array);
 // }
+
+Pixel24_t gaussian_blur5x5(int i, int j, Matrix_t<Pixel24_t>& pixel_array) {
+    static Matrix_t<double> gaussian_matrix = {
+        {  1.0 / 256.0,  4.0 / 256.0,  6.0 / 256.0,  4.0 / 256.0,  1.0 / 256.0},
+        {  4.0 / 256.0, 16.0 / 256.0, 24.0 / 256.0, 16.0 / 256.0,  4.0 / 256.0},
+        {  6.0 / 256.0, 24.0 / 256.0, 36.0 / 256.0, 24.0 / 256.0,  6.0 / 256.0},
+        {  4.0 / 256.0, 16.0 / 256.0, 24.0 / 256.0, 16.0 / 256.0,  4.0 / 256.0},
+        {  1.0 / 256.0,  4.0 / 256.0,  6.0 / 256.0,  4.0 / 256.0,  1.0 / 256.0}
+    };
+
+    if(i == 0 && j == 0) {
+        std::cout << std::endl;
+        for(int x = 0; x<5;x++){
+            std::cout << "[ ";
+            for(int y = 0; y<5;y++){
+                std::cout << std::format("{:<10} ", gaussian_matrix[x][y]);
+            }
+            std::cout << "]\n";
+        }
+    }
+    return apply_matrix_extend(gaussian_matrix)(i, j, pixel_array);
+}

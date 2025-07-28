@@ -8,7 +8,7 @@ template<class T>
 using Matrix_t = std::vector<std::vector<T>>;
 
 template<class T>
-Matrix_t<T> operator*(T scalar, Matrix_t<T>& matrix) {
+Matrix_t<T> operator*(T scalar, const Matrix_t<T>& matrix) {
 	Matrix_t<T> product = matrix;
 	for (auto& row : product) {
 		for (auto& elem : row) {
@@ -52,3 +52,4 @@ Pixel24_t box_blur_err(int i, int j, Matrix_t<Pixel24_t>& pixel_array);
 std::function<Pixel24_t(int, int, Matrix_t<Pixel24_t>&)> apply_matrix_extend(Matrix_t<double> kernel);
 Pixel24_t identity(int i, int j, Matrix_t<Pixel24_t>& pixel_array);
 Pixel24_t edge_detect(int i, int j, Matrix_t<Pixel24_t>& pixel_array);
+Pixel24_t gaussian_blur5x5(int i, int j, Matrix_t<Pixel24_t>& pixel_array);
