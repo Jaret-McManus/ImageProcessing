@@ -61,7 +61,28 @@ int main (int argc, char *argv[]) {
 		func = edge_detect;
 	} else if (function_arg == "--gaussian-blur") {
 		func = gaussian_blur5x5;
-	} else {
+	} else if (function_arg == "--random") {
+		func = random_pixel;
+	} else if (function_arg == "--random-ratio") {
+		func = random_ratio;
+	} else if (function_arg == "--empty-cross") {
+		func = empty_cross;
+	} else if (function_arg == "--border-only") {
+		if (argc >= 5) {
+			char *end;
+			int radius = strtol(argv[4], &end, 10);
+			if (end == argv[4] || *end != '\0' || errno == ERANGE) {
+				std::cerr << std::format("Error converting '{}' to an integer for border only radius!\n", argv[4]);
+				return 1;
+			}
+
+			func = border_only_nxn(radius);
+			curr_arg++;
+		} else {
+			std::cerr << std::format("Error: border only needs a radius!\n");
+			return 1;
+		}
+ 	} else {
 		std::cerr << std::format("Invalid function flag!: ({})\n", argv[3]);
 		return 1;
 	}

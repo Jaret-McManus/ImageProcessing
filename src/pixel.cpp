@@ -1,5 +1,14 @@
 #include <iostream>
 #include "pixel.h"
+#include <cassert>
+
+
+Pixel24_t random_pixel(int i, int j, Matrix_t<Pixel24_t>& pixel_array) {
+	uint r_val = rand() % 256;
+	uint g_val = rand() % 256;
+	uint b_val = rand() % 256;
+	return Pixel24_t(r_val, g_val, b_val);
+}
 
 // color functions
 std::function<Pixel24_t(int,int,Matrix_t<Pixel24_t>&)> color_ratio(float r, float g, float b) {
@@ -12,6 +21,13 @@ std::function<Pixel24_t(int,int,Matrix_t<Pixel24_t>&)> color_ratio(float r, floa
 			static_cast<int>(std::round(pixel.blue * b))
 		);
 	};
+}
+
+Pixel24_t random_ratio(int i, int j, Matrix_t<Pixel24_t>& pixel_array) {
+	float r = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+	float g = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+	float b = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+	return color_ratio(r, g, b)(i, j, pixel_array);
 }
 
 Pixel24_t red(int i, int j, Matrix_t<Pixel24_t>& pixel_array) {
@@ -215,4 +231,49 @@ Pixel24_t gaussian_blur5x5(int i, int j, Matrix_t<Pixel24_t>& pixel_array) {
         }
     }
     return apply_matrix_extend(gaussian_matrix)(i, j, pixel_array);
+}
+
+Pixel24_t empty_cross(int i, int j, Matrix_t<Pixel24_t>& pixel_array) {
+	static double fourth = 1.0 / 4.0; 
+	static Matrix_t<double> empty_cross_matrix = {
+		{ 0.0,    fourth, 0.0    },
+		{ fourth, 0.0,    fourth },
+		{ 0.0,    fourth, 0.0    }
+	};
+
+	return apply_matrix_extend(empty_cross_matrix)(i, j, pixel_array);
+}
+
+Pixel24_t border_only(int i, int j, Matrix_t<Pixel24_t>& pixel_array) {
+	static double eighth = 1.0 / 8.0; 
+	static Matrix_t<double> empty_cross_matrix = {
+		{ eighth, eighth, eighth },
+		{ eighth, 0.0, eighth },
+		{ eighth, eighth, eighth },
+	};
+
+	return apply_matrix_extend(empty_cross_matrix)(i, j, pixel_array);
+}
+
+std::function<Pixel24_t(int, int, Matrix_t<Pixel24_t>&)> border_only_nxn(int radius) {
+	assert(radius > 0);
+	int32_t diameter = 2*radius + 1;
+	int32_t num_cells = 4*diameter - 4;
+	double value = 1.0 / num_cells; 
+	Matrix_t<double> border_matrix(diameter);
+	for (int32_t i = 0; i < diameter; i++) {
+		std::vector<double> row(diameter);
+		for (int32_t j = 0; j < diameter; j++) {
+			if(i == 0 || i == diameter-1) { // first/last row all values
+				row.push_back(value);
+			} else if(j == 0 || j == diameter - 1) { //first column always filled 
+				row.push_back(value);
+			} else {
+				row.push_back(0.0);
+			}
+		}
+		border_matrix.push_back(row);
+	}
+
+	return [=, &border_matrix](int i, int j, Matrix_t<Pixel24_t>& pixel_array){ return apply_matrix_extend(border_matrix)(i, j, pixel_array); };
 }

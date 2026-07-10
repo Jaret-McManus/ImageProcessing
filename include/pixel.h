@@ -36,8 +36,11 @@ struct Pixel24_t {
 	}
 };
 
+Pixel24_t random_pixel(int i, int j, Matrix_t<Pixel24_t>& pixel_array);
+
 // color ratios
 std::function<Pixel24_t(int,int,Matrix_t<Pixel24_t>&)> color_ratio(float r, float g, float b);
+Pixel24_t random_ratio(int i, int j, Matrix_t<Pixel24_t>& pixel_array);
 Pixel24_t red(int i, int j, Matrix_t<Pixel24_t>& pixel_array);
 Pixel24_t green(int i, int j, Matrix_t<Pixel24_t>& pixel_array);
 Pixel24_t blue(int i, int j, Matrix_t<Pixel24_t>& pixel_array);
@@ -53,3 +56,6 @@ std::function<Pixel24_t(int, int, Matrix_t<Pixel24_t>&)> apply_matrix_extend(Mat
 Pixel24_t identity(int i, int j, Matrix_t<Pixel24_t>& pixel_array);
 Pixel24_t edge_detect(int i, int j, Matrix_t<Pixel24_t>& pixel_array);
 Pixel24_t gaussian_blur5x5(int i, int j, Matrix_t<Pixel24_t>& pixel_array);
+Pixel24_t empty_cross(int i, int j, Matrix_t<Pixel24_t>& pixel_array);
+Pixel24_t border_only(int i, int j, Matrix_t<Pixel24_t>& pixel_array);
+std::function<Pixel24_t(int, int, Matrix_t<Pixel24_t>&)> border_only_nxn(int radius);
