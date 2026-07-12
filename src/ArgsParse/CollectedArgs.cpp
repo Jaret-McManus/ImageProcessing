@@ -4,14 +4,14 @@
 #include <format>
 #include <iostream>
 #include <string>
-#include <vector>
+#include <set>
 
 #include "ArgsParse/CollectedArgs.h"
 
 ArgsParse::CollectedArgs ArgsParse::collect_args_or_fail(int argc, const char* argv[]) {
 	int32_t arg_index = 1;
-	std::vector<char> invalid_single_flags{};
-	std::vector<std::string> invalid_long_flags{};
+	std::set<char> invalid_single_flags{};
+	std::set<std::string> invalid_long_flags{};
 	CollectedArgs collected_args{};
 
 	while ( arg_index < argc ) {
@@ -32,7 +32,7 @@ ArgsParse::CollectedArgs ArgsParse::collect_args_or_fail(int argc, const char* a
 	return collected_args;
 }
 
-void ArgsParse::check_single_flags(int& arg_index, const char* argv[], CollectedArgs &collected_args, std::vector<char> &invalid_flags) {
+void ArgsParse::check_single_flags(int& arg_index, const char* argv[], CollectedArgs &collected_args, std::set<char> &invalid_flags) {
 	const char* c_string = argv[arg_index];
 	std::string string{c_string + 1}; // "-" has a length of 1, skip it
 	
@@ -43,12 +43,12 @@ void ArgsParse::check_single_flags(int& arg_index, const char* argv[], Collected
 				break;
 			default:
 				collected_args.all_flags_valid = false;
-				invalid_flags.push_back(ch);
+				invalid_flags.insert(ch);
 		}
 	}
 }
 
-void ArgsParse::check_long_flags(int& arg_index, const char* argv[], CollectedArgs &collected_args, std::vector<std::string> &invalid_flags) {
+void ArgsParse::check_long_flags(int& arg_index, const char* argv[], CollectedArgs &collected_args, std::set<std::string> &invalid_flags) {
 	const char* c_string = argv[arg_index];
 	std::string string{ c_string + 2 }; // "--" has a length of 2, skip it
 	
@@ -56,11 +56,11 @@ void ArgsParse::check_long_flags(int& arg_index, const char* argv[], CollectedAr
 		collected_args.help_flagged = true;
 	} else {
 		collected_args.all_flags_valid = false;
-		invalid_flags.push_back( string );
+		invalid_flags.insert( string );
 	}
 }
 
-void ArgsParse::print_invalid_flags(const std::vector<char> &invalid_single_flags, const std::vector<std::string> &invalid_long_flags) {
+void ArgsParse::print_invalid_flags(const std::set<char> &invalid_single_flags, const std::set<std::string> &invalid_long_flags) {
 	for ( char flag : invalid_single_flags ) {
 		std::cerr << std::format("Invalid flag provided: '-{}'\n", flag);
 	}
