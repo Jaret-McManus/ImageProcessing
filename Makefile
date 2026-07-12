@@ -6,7 +6,7 @@ SRC     := src
 INCLUDE := include
 LIB     := lib
 LIBRARIES   := 
-EXECUTABLE  := main
+EXECUTABLE  := image
 
 SOURCES := $(shell find $(SRC) -name '*.cpp')
 
