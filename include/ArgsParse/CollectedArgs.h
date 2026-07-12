@@ -1,5 +1,6 @@
 #include <set>
 #include <string>
+#include <optional>
 
 namespace ArgsParse {
 	struct CollectedArgs {
@@ -23,4 +24,5 @@ namespace ArgsParse {
 	void check_single_flags(RawArgContext raw_arg_context, CollectedArgs& collected_args, std::set<char>& invalid_flags);
 	void check_long_flags(RawArgContext raw_arg_context, CollectedArgs& collected_args, std::set<std::string>& invalid_flags);
 	void print_invalid_flags(const std::set<char>& invalid_single_flags, const std::set<std::string>& invalid_long_flags);
+	std::optional<std::string> collect_filename_optional(RawArgContext &raw_arg_context);
 }

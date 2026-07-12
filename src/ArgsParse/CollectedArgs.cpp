@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <format>
 #include <iostream>
+#include <optional>
 #include <string>
 #include <set>
 
@@ -49,6 +50,13 @@ void check_single_flags(RawArgContext raw_arg_context, CollectedArgs &collected_
 				break;
 			case 'i':
 				collected_args.input_filename_flagged = true;
+				if ( auto filename = collect_filename_optional(raw_arg_context) ) 
+					collected_args.input_filename = *filename;
+				break;
+			case 'o':
+				collected_args.output_filename_flagged = true;
+				if ( auto filename = collect_filename_optional(raw_arg_context) ) 
+					collected_args.output_filename = *filename;
 				break;
 			default:
 				collected_args.all_flags_valid = false;
@@ -61,11 +69,24 @@ void check_long_flags(RawArgContext raw_arg_context, CollectedArgs &collected_ar
 	const char* c_string = raw_arg_context.argv[raw_arg_context.arg_index];
 	std::string string{ c_string + 2 }; // "--" has a length of 2, skip it
 	
-	if ( string.compare("help") == 0 ) {
+	if ( string.compare("help") == 0 ) 
+	{
 		collected_args.help_flagged = true;
-	} else if ( string.compare("input") == 0 ){
+	} 
+	else if ( string.compare("input") == 0 ) 
+	{
 		collected_args.input_filename_flagged = true;
-	} else {
+		if ( auto filename = collect_filename_optional(raw_arg_context) ) 
+			collected_args.input_filename = *filename;
+	} 
+	else if ( string.compare("output") == 0 ) 
+	{
+		collected_args.output_filename_flagged = true;
+		if ( auto filename = collect_filename_optional(raw_arg_context) )
+			collected_args.output_filename = *filename;
+	} 
+	else 
+	{
 		collected_args.all_flags_valid = false;
 		invalid_flags.insert( string );
 	}
@@ -85,12 +106,24 @@ std::ostream &operator<<(std::ostream &os, const ArgsParse::CollectedArgs &colle
 	   << std::format("\tall_flags_valid: {}\n", collected.all_flags_valid)
 	   << std::format("\thelp_flagged: {}\n", collected.help_flagged)
 	   << std::format("\tinput_filename_flagged: {}\n", collected.input_filename_flagged)
-	   << std::format("\tstring input_filename: {}\n", collected.input_filename)
+	   << std::format("\tinput_filename: \"{}\"\n", collected.input_filename)
 	   << std::format("\toutput_filename_flagged: {}\n", collected.output_filename_flagged)
-	   << std::format("\toutput_filename: {}\n", collected.output_filename)
+	   << std::format("\toutput_filename: \"{}\"\n", collected.output_filename)
 	   << "}";
 	
 	return os;
 }
 
+std::optional<std::string> collect_filename_optional(RawArgContext &raw_arg_context) {
+	if ( raw_arg_context.arg_index + 1 >= raw_arg_context.argc ) {
+		return {};
+	}
+
+	raw_arg_context.arg_index++;
+	std::string filename{ raw_arg_context.argv[raw_arg_context.arg_index] };
+
+	return filename;
 }
+
+
+} // end of ArgsParse namespace
