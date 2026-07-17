@@ -11,6 +11,7 @@ namespace ArgsParse {
 		bool output_filename_flagged = false;
 		std::string output_filename{};
 
+		void validate_flags_or_fail();
 		friend std::ostream& operator<<(std::ostream& os, const CollectedArgs &collected);
 	};
 
@@ -25,4 +26,6 @@ namespace ArgsParse {
 	void check_long_flags(RawArgContext raw_arg_context, CollectedArgs& collected_args, std::set<std::string>& invalid_flags);
 	void print_invalid_flags(const std::set<char>& invalid_single_flags, const std::set<std::string>& invalid_long_flags);
 	std::optional<std::string> collect_filename_optional(RawArgContext &raw_arg_context);
+
+	void display_help();
 }

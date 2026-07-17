@@ -6,6 +6,7 @@
 #include <optional>
 #include <string>
 #include <set>
+#include <print>
 
 #include "ArgsParse/CollectedArgs.h"
 
@@ -31,6 +32,7 @@ CollectedArgs collect_args_or_fail(int argc, const char* argv[]) {
 
 	if ( !collected_args.all_flags_valid ) {
 		print_invalid_flags(invalid_single_flags, invalid_long_flags);
+		display_help();
 		exit(-1);
 	}
 
@@ -125,5 +127,27 @@ std::optional<std::string> collect_filename_optional(RawArgContext &raw_arg_cont
 	return filename;
 }
 
+
+void CollectedArgs::validate_flags_or_fail() {
+	bool error = false;
+	if ( !input_filename_flagged || input_filename.compare("") == 0 ) {
+		std::println(stderr, "No input filename specified!");
+		error = true;
+	}
+	if ( !output_filename_flagged || output_filename.compare("") == 0 ) {
+		std::println(stderr, "No output filename specified!");
+		error = true;
+	}
+
+	if ( error ) exit(-1);
+}
+
+void display_help() {
+	std::println(stderr, "Usage: ./bin/image [-h] -i <filename> -o <filename>");
+	std::println(stderr, "Valid flags:");
+	std::println("\t-h, --help: show help");
+	std::println("\t-i, --input: specify input filename from the next argument");
+	std::println("\t-o, --output: specify output filename from the next argument");
+}
 
 } // end of ArgsParse namespace
