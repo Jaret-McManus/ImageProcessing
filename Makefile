@@ -1,5 +1,5 @@
 CXX       := g++
-CXX_FLAGS := -Wall -Wextra -std=c++20 
+CXX_FLAGS := -Wall -Wextra -std=c++26 
 
 BIN     := bin
 SRC     := src
