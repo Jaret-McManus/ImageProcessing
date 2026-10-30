@@ -10,6 +10,29 @@ pub struct Image {
     _pixels: Vec<Vec<Pixel24>>
 }
 
+pub struct BitmapHeader {
+	size: u32,
+	reserved1: u16,
+	reserved2: u16,
+	offset: u32,
+}
+
+impl BitmapHeader {
+    pub fn try_create(
+        size: Option<u32>,
+        reserved1: Option<u16>,
+        reserved2: Option<u16>,
+        offset: Option<u32>,
+    ) -> Option<BitmapHeader> {
+        Some(BitmapHeader {
+            size: size?,
+            reserved1: reserved1?,
+            reserved2: reserved2?,
+            offset: offset?
+        })
+    }
+}
+
 pub struct BitmapInfoHeader {
     #[allow(unused)]
     hdr_size: u32,
