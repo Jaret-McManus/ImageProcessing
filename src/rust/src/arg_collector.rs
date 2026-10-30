@@ -28,7 +28,7 @@ pub enum ArgCollectError {
 pub struct ArgCollector {
     pub process_type: ProcessType,
     pub input_filename: String,
-    pub output_filename: String
+    pub _output_filename: String
 }
 
 impl ArgCollector {
@@ -72,7 +72,7 @@ impl ArgCollector {
         };
 
         Ok(ArgCollector { 
-            process_type, input_filename, output_filename 
+            process_type, input_filename, _output_filename: output_filename 
         })
     }
 
