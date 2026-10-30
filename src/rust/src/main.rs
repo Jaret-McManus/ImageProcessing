@@ -7,10 +7,7 @@ mod data_structures;
 use crate::arg_collector::{ArgCollector, ProcessType};
 
 #[derive(Debug)]
-enum ProgramError{
-    NotImplemented,
-    _InputFileError, _OutputFileError
-}
+enum ProgramError{ NotImplemented }
 
 fn main() {
     let args: VecDeque<String> = env::args().skip(1).collect();

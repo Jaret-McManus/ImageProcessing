@@ -19,7 +19,6 @@ pub enum ArgCollectError {
     NoNumberProvided(String),
     InvalidFlagPassed(String),
     NoProcessTypeProvided,
-    // OutputFlagBeforeInput,
     NoInputFilenameProvided, NoOutputFilenameProvided,
     NotImplemented
 }
