@@ -30,6 +30,10 @@ pub fn identity(image: Image) -> Image {
 
 
 fn get_blurred_pixel(x: usize, y: usize, kernel_size: u32, image: &Image) -> Pixel24 {
-    let original_pixel = image.pixels[x][y];
-    return original_pixel;
+    let original_pixel = &image.pixels[x][y];
+    return Pixel24 { 
+        red: original_pixel.red,
+        green:  original_pixel.green,
+        blue: original_pixel.blue
+    };
 }

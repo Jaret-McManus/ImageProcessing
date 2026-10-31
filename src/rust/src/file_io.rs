@@ -1,14 +1,16 @@
-use std::{fs, io::{Error, Read, Seek, SeekFrom}};
+use std::{fs::{self, File}, io::{Error, Read, Seek, SeekFrom, Write}};
 
 use crate::data_structures::{BitmapHeader, BitmapInfoHeader, Image, Pixel24};
 
 use FileIOError::{
     CannotOpenInputFile, 
+    CannotOpenOutputFile,
     InvalidBitmapHeader,
     InvalidBitmapInfoHeader,
     FileSeekError,
-    NotImplemented,
-    FailedReadPixelRow
+    FailedReadPixelRow,
+    WriteError,
+    // NotImplemented,
 };
 
 const BITMAP_MAGIC_NUMBER: [u8; 2] = [0x42, 0x4D];
@@ -17,11 +19,13 @@ const BITMAP_MAGIC_NUMBER: [u8; 2] = [0x42, 0x4D];
 #[allow(dead_code)]
 pub enum FileIOError {
     CannotOpenInputFile(Error),
+    CannotOpenOutputFile(Error),
     InvalidBitmapHeader,
     InvalidBitmapInfoHeader,
     FileSeekError(Error),
     NotImplemented,
-    FailedReadPixelRow
+    FailedReadPixelRow,
+    WriteError(Error)
 }
 
 pub fn read_file_to_image(input_filename: String) -> Result<Image, FileIOError> {
@@ -147,77 +151,78 @@ fn read_u8(file: &mut fs::File) -> Option<u8> {
 
 }
 
-// fn read_bitmap_header(file: &mut fs::File) -> Option<BitmapHeader> {
-//     BitmapHeader::try_create(
-//         read_u32(file),
-//         read_u16(file),
-//         read_u16(file),
-//         read_u32(file),
-//     )
-// }
+fn write_image(
+    path: String, bm_header: BitmapHeader, bm_info_header: BitmapInfoHeader, image: Image
+) -> Result<(), FileIOError> {
+    let mut file = fs::File::open(path)
+        .map_err(|err| CannotOpenOutputFile(err))?;
+    write_bitmap_header(bm_header, &mut file)?;
+    write_bitmap_info_header(bm_info_header, &mut file)?;
+    for row in image.pixels {
+        write_pixel_row(row, &mut file)?;
+    }
 
-// fn read_bitmap_info_header(file: &mut fs::File) -> Option<BitmapInfoHeader> {
-//     BitmapInfoHeader::try_create(
-//         read_u32(file),
-//         read_u32(file),
-//         read_u32(file),
-//         read_u16(file),
-//         read_u16(file),
-//         read_u32(file),
-//         read_u32(file),
-//         read_u32(file),
-//         read_u32(file),
-//         read_u32(file),
-//         read_u32(file),
-//     )
-// }
+    Ok(())
+}
 
-// fn read_pixel_row(width: u32, file: &mut fs::File) -> Option<Vec<Pixel24>> {
-//     let mut row: Vec<Pixel24> = Vec::with_capacity(width as usize);
-//     for _ in 0..width {
-//         let pixel = read_pixel(file)?;
-//         row.push(pixel);
-//     }
-
-//     Some(row)
-// }
-
-// fn read_pixel(file: &mut fs::File) -> Option<Pixel24> {
-//     let blue = read_u8(file)?;
-//     let green = read_u8(file)?;
-//     let red = read_u8(file)?;
-
-//     let pixel = Pixel24::new(red, green, blue);
-//     Some(pixel)
-// }
-
-// fn read_u32(file: &mut fs::File) -> Option<u32> {
-//     let mut four_bytes = [0u8; 4];
-//     let bytes_read = file.read(&mut four_bytes)
-//         .ok()?;
-
-//     if bytes_read < 4 { return None }
+fn write_bitmap_header(bm_header: BitmapHeader, file: &mut fs::File) -> Result<(), FileIOError> {
+    file.write_all(b"BM")
+        .map_err(|err| WriteError(err))?;
+    write_u32(bm_header.size, file)?;
+    write_u16(bm_header.reserved1, file)?;
+    write_u16(bm_header.reserved2, file)?;
+    write_u32(bm_header.offset, file)?;
     
-//     Some(u32::from_le_bytes(four_bytes))
-// }
+    Ok(())
+}
 
-// fn read_u16(file: &mut fs::File) -> Option<u16> {
-//     let mut two_bytes = [0u8; 2];
-//     let bytes_read = file.read(&mut two_bytes)
-//         .ok()?;
+fn write_bitmap_info_header(bm_info_header: BitmapInfoHeader, file: &mut fs::File) -> Result<(), FileIOError> {
+    write_u32(bm_info_header.hdr_size, file)?;
+    write_u32(bm_info_header.width, file)?;
+    write_u32(bm_info_header.height, file)?;
+    write_u16(bm_info_header.planes, file)?;
+    write_u16(bm_info_header.bits_per_pixel, file)?;
+    write_u32(bm_info_header.compression, file)?;
+    write_u32(bm_info_header.image_size, file)?;
+    write_u32(bm_info_header.x_pixels_per_m, file)?;
+    write_u32(bm_info_header.y_pixels_per_m, file)?;
+    write_u32(bm_info_header.colors_used, file)?;
+    write_u32(bm_info_header.important_colors, file)?;
 
-//     if bytes_read < 2 { return None }
-    
-//     Some(u16::from_le_bytes(two_bytes))
-// }
+    Ok(())
+}
 
-// fn read_u8(file: &mut fs::File) -> Option<u8> {
-//     let mut byte = [0u8; 1];
-//     let bytes_read = file.read(&mut byte)
-//         .ok()?;
+fn write_pixel_row(row: Vec<Pixel24>, file: &mut fs::File) -> Result<(), FileIOError> {
+    for pixel in row {
+        write_pixel(pixel, file)?;
+    }
 
-//     if bytes_read < 1 { return None }
-    
-//     Some(u8::from_le_bytes(byte))
+    Ok(())
+}
 
-// }
+fn write_pixel(pixel: Pixel24, file: &mut fs::File) -> Result<(), FileIOError> {
+    write_u8(pixel.blue, file)?;
+    write_u8(pixel.green, file)?;
+    write_u8(pixel.red, file)?;
+
+    Ok(())
+}
+
+fn write_u32(number: u32, file: &mut fs::File) -> Result<(), FileIOError> {
+    file.write(&number.to_le_bytes())
+        .map_err(|err| WriteError(err))?;
+    Ok(())
+}
+
+fn write_u16(number: u16, file: &mut fs::File) -> Result<(), FileIOError> {
+    file.write(&number.to_le_bytes())
+        .map_err(|err| WriteError(err))?;
+    Ok(())
+}
+
+fn write_u8(number: u8, file: &mut fs::File) -> Result<(), FileIOError> {
+    file.write(&number.to_le_bytes())
+        .map_err(|err| WriteError(err))?;
+    Ok(())
+
+}

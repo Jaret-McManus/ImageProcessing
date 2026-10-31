@@ -42,9 +42,9 @@ impl Image {
 }
 
 pub struct BitmapHeader {
-	size: u32,
-	reserved1: u16,
-	reserved2: u16,
+	pub size: u32,
+	pub reserved1: u16,
+	pub reserved2: u16,
 	pub offset: u32,
 }
 
@@ -65,17 +65,17 @@ impl BitmapHeader {
 }
 
 pub struct BitmapInfoHeader {
-    hdr_size: u32,
+    pub hdr_size: u32,
 	pub width: u32,
 	pub height: u32,
-	planes: u16,
-	bits_per_pixel: u16,
-	compression: u32,
-	image_size: u32,
-	x_pixels_per_m: u32,
-	y_pixels_per_m: u32,
-	colors_used: u32,
-	important_colors: u32,
+	pub planes: u16,
+	pub bits_per_pixel: u16,
+	pub compression: u32,
+	pub image_size: u32,
+	pub x_pixels_per_m: u32,
+	pub y_pixels_per_m: u32,
+	pub colors_used: u32,
+	pub important_colors: u32,
 }
 
 impl BitmapInfoHeader {
