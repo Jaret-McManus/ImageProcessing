@@ -1,3 +1,6 @@
+use std::collections::VecDeque;
+use crate::file_io::FileIOError;
+
 #[derive(Debug)]
 pub struct Pixel24 {
     pub red: u8,
@@ -13,34 +16,27 @@ impl Pixel24 {
 
 #[derive(Debug)]
 pub struct Image {
-    pub pixels: Vec<Vec<Pixel24>>,
-    last_populated_row: i64,
+    pub pixels: VecDeque<Vec<Pixel24>>,
     pub width: usize,
     pub height: usize,
 }
 
 impl Image {
     pub fn empty(width: usize, height: usize) -> Self {
-        let mut rows = Vec::<Vec<Pixel24>>::with_capacity(height as usize);
-        for _ in 0..height {
-            rows.push(Vec::<Pixel24>::with_capacity(width as usize));
-        }
+        let rows = VecDeque::<Vec<Pixel24>>::with_capacity(height as usize);
 
         Image { 
             pixels: rows, 
-            last_populated_row: (height - 1) as i64,
             width, height
         }
     }
 
     pub fn push_row(&mut self, row: Vec<Pixel24>) -> () {
-        assert!(self.last_populated_row >= 0);
-
-        self.pixels.insert(self.last_populated_row as usize, row);
-        self.last_populated_row -= 1;
+        self.pixels.push_front(row);
     }
 }
 
+#[derive(Debug)]
 pub struct BitmapHeader {
 	pub size: u32,
 	pub reserved1: u16,
@@ -50,12 +46,12 @@ pub struct BitmapHeader {
 
 impl BitmapHeader {
     pub fn try_create(
-        size: Option<u32>,
-        reserved1: Option<u16>,
-        reserved2: Option<u16>,
-        offset: Option<u32>,
-    ) -> Option<BitmapHeader> {
-        Some(BitmapHeader {
+        size: Result<u32, FileIOError>,
+        reserved1: Result<u16, FileIOError>,
+        reserved2: Result<u16, FileIOError>,
+        offset: Result<u32, FileIOError>,
+    ) -> Result<BitmapHeader, FileIOError> {
+        Ok(BitmapHeader {
             size: size?,
             reserved1: reserved1?,
             reserved2: reserved2?,
@@ -64,6 +60,7 @@ impl BitmapHeader {
     }
 }
 
+#[derive(Debug)]
 pub struct BitmapInfoHeader {
     pub hdr_size: u32,
 	pub width: u32,
@@ -80,19 +77,19 @@ pub struct BitmapInfoHeader {
 
 impl BitmapInfoHeader {
     pub fn try_create(
-        hdr_size: Option<u32>,
-        width: Option<u32>,
-        height: Option<u32>,
-        planes: Option<u16>,
-        bits_per_pixel: Option<u16>,
-        compression: Option<u32>,
-        image_size: Option<u32>,
-        x_pixels_per_m: Option<u32>,
-        y_pixels_per_m: Option<u32>,
-        colors_used: Option<u32>,
-        important_colors: Option<u32>,
-    ) -> Option<BitmapInfoHeader> {
-        Some(BitmapInfoHeader{
+        hdr_size: Result<u32, FileIOError>,
+        width: Result<u32, FileIOError>,
+        height: Result<u32, FileIOError>,
+        planes: Result<u16, FileIOError>,
+        bits_per_pixel: Result<u16, FileIOError>,
+        compression: Result<u32, FileIOError>,
+        image_size: Result<u32, FileIOError>,
+        x_pixels_per_m: Result<u32, FileIOError>,
+        y_pixels_per_m: Result<u32, FileIOError>,
+        colors_used: Result<u32, FileIOError>,
+        important_colors: Result<u32, FileIOError>,
+    ) -> Result<BitmapInfoHeader, FileIOError> {
+        Ok(BitmapInfoHeader{
             hdr_size: hdr_size?,
             width: width?,
             height: height?,

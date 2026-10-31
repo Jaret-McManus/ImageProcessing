@@ -1,11 +1,13 @@
-use std::{collections::VecDeque, fmt::format};
-use ArgCollectError::{
+use std::{collections::VecDeque, convert::TryFrom};
+use self::ArgCollectError::{
     InvalidFlagPassed, 
     NoProcessTypeProvided,
     CannotConvertNumber, NoNumberProvided,
     // OutputFlagBeforeInput, 
     NoInputFilenameProvided, NoOutputFilenameProvided, 
 };
+
+use crate::arg_collector::ProcessType::Identity;
 
 #[derive(Debug)]
 pub enum ProcessType {
@@ -28,7 +30,7 @@ pub enum ArgCollectError {
 pub struct ArgCollector {
     pub process_type: ProcessType,
     pub input_filename: String,
-    pub _output_filename: String
+    pub output_filename: String
 }
 
 impl ArgCollector {
@@ -51,6 +53,7 @@ impl ArgCollector {
                         .map_err(|_| CannotConvertNumber(format!("{number}")))?;
                     process_type = Some(ProcessType::BoxBlur(number));
                 },
+                "--identity" => process_type = Some(Identity),
                 "-i" | "--input" => { 
                     input_flag_seen = true;
                     input_filename = args.pop_front()
@@ -73,7 +76,7 @@ impl ArgCollector {
         };
 
         Ok(ArgCollector { 
-            process_type, input_filename, _output_filename: output_filename 
+            process_type, input_filename, output_filename: output_filename 
         })
     }
 

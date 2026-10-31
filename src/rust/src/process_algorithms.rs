@@ -1,6 +1,6 @@
 use crate::data_structures::{Image, Pixel24};
 
-enum OutOfBoundsMethod {
+enum _OutOfBoundsMethod {
     Extend,
     // Blackout,
     // Mirror,
@@ -29,7 +29,7 @@ pub fn identity(image: Image) -> Image {
 }
 
 
-fn get_blurred_pixel(x: usize, y: usize, kernel_size: u32, image: &Image) -> Pixel24 {
+fn get_blurred_pixel(x: usize, y: usize, _kernel_size: u32, image: &Image) -> Pixel24 {
     let original_pixel = &image.pixels[x][y];
     return Pixel24 { 
         red: original_pixel.red,
