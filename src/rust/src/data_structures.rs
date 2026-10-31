@@ -1,20 +1,51 @@
 #[derive(Debug)]
 pub struct Pixel24 {
-    _red: u8,
-    _green: u8,
-    _blue: u8
+    pub red: u8,
+    pub green: u8,
+    pub blue: u8
+}
+
+impl Pixel24 {
+    pub fn new(red: u8, green: u8, blue: u8) -> Self {
+        Pixel24 { red, green, blue }
+    }
 }
 
 #[derive(Debug)]
 pub struct Image {
-    _pixels: Vec<Vec<Pixel24>>
+    pub pixels: Vec<Vec<Pixel24>>,
+    last_populated_row: i64,
+    pub width: usize,
+    pub height: usize,
+}
+
+impl Image {
+    pub fn empty(width: usize, height: usize) -> Self {
+        let mut rows = Vec::<Vec<Pixel24>>::with_capacity(height as usize);
+        for _ in 0..height {
+            rows.push(Vec::<Pixel24>::with_capacity(width as usize));
+        }
+
+        Image { 
+            pixels: rows, 
+            last_populated_row: (height - 1) as i64,
+            width, height
+        }
+    }
+
+    pub fn push_row(&mut self, row: Vec<Pixel24>) -> () {
+        assert!(self.last_populated_row >= 0);
+
+        self.pixels.insert(self.last_populated_row as usize, row);
+        self.last_populated_row -= 1;
+    }
 }
 
 pub struct BitmapHeader {
 	size: u32,
 	reserved1: u16,
 	reserved2: u16,
-	offset: u32,
+	pub offset: u32,
 }
 
 impl BitmapHeader {
@@ -34,27 +65,16 @@ impl BitmapHeader {
 }
 
 pub struct BitmapInfoHeader {
-    #[allow(unused)]
     hdr_size: u32,
-    #[allow(unused)]
-	width: u32,
-    #[allow(unused)]
-	height: u32,
-    #[allow(unused)]
+	pub width: u32,
+	pub height: u32,
 	planes: u16,
-    #[allow(unused)]
 	bits_per_pixel: u16,
-    #[allow(unused)]
 	compression: u32,
-    #[allow(unused)]
 	image_size: u32,
-    #[allow(unused)]
 	x_pixels_per_m: u32,
-    #[allow(unused)]
 	y_pixels_per_m: u32,
-    #[allow(unused)]
 	colors_used: u32,
-    #[allow(unused)]
 	important_colors: u32,
 }
 

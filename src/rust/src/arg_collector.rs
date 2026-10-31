@@ -1,4 +1,4 @@
-use std::collections::VecDeque;
+use std::{collections::VecDeque, fmt::format};
 use ArgCollectError::{
     InvalidFlagPassed, 
     NoProcessTypeProvided,
@@ -9,7 +9,8 @@ use ArgCollectError::{
 
 #[derive(Debug)]
 pub enum ProcessType {
-    BoxBlur(i32)
+    BoxBlur(u32),
+    Identity
 }
 
 #[derive(Debug)]
@@ -46,8 +47,9 @@ impl ArgCollector {
                     let number = ArgCollector::consume_next_arg_as_number(
                         args.pop_front(), error_info
                     )?;
+                    let number = u32::try_from(number)
+                        .map_err(|_| CannotConvertNumber(format!("{number}")))?;
                     process_type = Some(ProcessType::BoxBlur(number));
-
                 },
                 "-i" | "--input" => { 
                     input_flag_seen = true;
