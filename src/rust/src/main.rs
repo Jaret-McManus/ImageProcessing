@@ -1,17 +1,16 @@
 use std::{
-    collections::VecDeque, env, fmt::format, process::exit, time::Instant
+    collections::VecDeque, env, process::exit, time::Instant
 };
 mod arg_collector;
 mod file_io;
 mod data_structures;
 mod process_algorithms;
 use crate::{
-    arg_collector::{ArgCollector, ProcessType},
-    data_structures::{Image}
+    arg_collector::{ArgCollector, ProcessType}, data_structures::{BitmapHeader, BitmapInfoHeader, Image}
 };
 
 fn main() {
-    let now = Instant::now();
+    let start = Instant::now();
     let args: VecDeque<String> = env::args().skip(1).collect();
 
     let collector_result = ArgCollector::create(args);
@@ -21,7 +20,7 @@ fn main() {
     };
 
     let read_start = Instant::now();
-    let image_result = file_io::read_file_to_image(collector.input_filename);
+    let image_result = file_io::read_file_to_image(collector.input_filename.clone());
     let Ok((
         image,
         bm_header,
@@ -31,16 +30,8 @@ fn main() {
         exit(-1);
     };
 
-    if collector.debug_flag {
-        let output = format!(
-            "Finished reading image:\n\t{:18} = {:?}\n\t{:18} = {:?}",
-            "total time elapsed", now.elapsed(),
-            "time reading", read_start.elapsed()
-        );
-        println!("{output}");
-    }
-
-    if collector.print_headers_flag { dbg!(&bm_header); dbg!(&bm_info_header); }
+    debug_print_read_time(&start, read_start, &collector);
+    debug_print_headers(&bm_header, &bm_info_header, &collector);
     
     let new_image: Image;
     match collector.process_type {
@@ -54,7 +45,7 @@ fn main() {
     // output image!
     let write_start = Instant::now();
     let write_result = file_io::write_image(
-        collector.output_filename, 
+        collector.output_filename.clone(), 
         bm_header, 
         bm_info_header, 
         new_image
@@ -62,10 +53,32 @@ fn main() {
     if write_result.is_err() {
         println!("Error writing image: {:?}", write_result.unwrap_err());
     }
+    debug_print_write_time(&start, write_start, &collector);
+}
+
+fn debug_print_headers(bm_header: &BitmapHeader, bm_info_header: &BitmapInfoHeader, collector: &ArgCollector) -> () {
+    if collector.print_headers_flag { 
+        println!("{:#?}", bm_header); 
+        println!("{:#?}", bm_info_header); 
+    }
+}
+
+fn debug_print_read_time(start: &Instant, read_start: Instant, collector: &ArgCollector) -> () {
+    if collector.debug_flag {
+        let output = format!(
+            "Finished reading image:\n\t{:18} = {:?}\n\t{:18} = {:?}",
+            "total time elapsed", start.elapsed(),
+            "time reading", read_start.elapsed()
+        );
+        println!("{output}");
+    }
+}
+
+fn debug_print_write_time(start: &Instant, write_start: Instant, collector: &ArgCollector) -> () {
     if collector.debug_flag {
         let output = format!(
             "Finished writing image:\n\t{:18} = {:?}\n\t{:18} = {:?}",
-            "total time elapsed", now.elapsed(),
+            "total time elapsed", start.elapsed(),
             "time writing", write_start.elapsed()
         );
         println!("{output}");
