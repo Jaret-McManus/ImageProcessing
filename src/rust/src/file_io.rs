@@ -159,31 +159,6 @@ fn read_pixel_from_bytes(bytes: &mut VecDeque<u8>) -> Result<Pixel24, FileIOErro
     Ok(Pixel24::new(red, green, blue))
 }
 
-fn read_pixel_row(width: u32, file: &mut fs::File) -> Result<Vec<Pixel24>, FileIOError> {
-    let mut row: Vec<Pixel24> = Vec::with_capacity(width as usize);
-    for _ in 0..width {
-        let pixel = read_pixel(file)?;
-        row.push(pixel);
-    }
-
-    let bytes_read = row.len() * 3;
-    let remainder_bytes = bytes_read % 4;
-    if remainder_bytes != 0 {
-        skip_padding(4 - remainder_bytes, file)?;
-    }
-
-    Ok(row)
-}
-
-fn read_pixel(file: &mut fs::File) -> Result<Pixel24, FileIOError> {
-    let blue = read_u8(file)?;
-    let green = read_u8(file)?;
-    let red = read_u8(file)?;
-
-    let pixel = Pixel24::new(red, green, blue);
-    Ok(pixel)
-}
-
 fn read_u32(file: &mut fs::File) -> Result<u32, FileIOError> {
     let mut four_bytes = [0u8; 4];
     let bytes_read = file.read(&mut four_bytes)
@@ -204,7 +179,7 @@ fn read_u16(file: &mut fs::File) -> Result<u16, FileIOError> {
     Ok(u16::from_le_bytes(two_bytes))
 }
 
-fn read_u8(file: &mut fs::File) -> Result<u8, FileIOError> {
+fn _read_u8(file: &mut fs::File) -> Result<u8, FileIOError> {
     let mut byte = [0u8; 1];
     let bytes_read = file.read(&mut byte)
         .map_err(|err| FailedReadU8(err))?;
@@ -215,11 +190,6 @@ fn read_u8(file: &mut fs::File) -> Result<u8, FileIOError> {
     }
     Ok(u8::from_le_bytes(byte))
 
-}
-
-fn skip_padding(padding_len: usize, file: &mut fs::File) -> Result<(), FileIOError> {
-    for _ in 0..padding_len { read_u8(file)?; }
-    Ok(())
 }
 
 pub fn write_image(
