@@ -1,5 +1,5 @@
 use std::{
-    collections::VecDeque, env, process::exit, time::Instant
+    collections::VecDeque, env, fmt::format, process::exit, time::Instant
 };
 mod arg_collector;
 mod file_io;
@@ -20,6 +20,7 @@ fn main() {
         exit(1);
     };
 
+    let read_start = Instant::now();
     let image_result = file_io::read_file_to_image(collector.input_filename);
     let Ok((
         image,
@@ -31,7 +32,12 @@ fn main() {
     };
 
     if collector.debug_flag {
-        println!("Finished reading image in {:?}", now.elapsed());
+        let output = format!(
+            "Finished reading image:\n\t{:18} = {:?}\n\t{:18} = {:?}",
+            "total time elapsed", now.elapsed(),
+            "time reading", read_start.elapsed()
+        );
+        println!("{output}");
     }
 
     if collector.print_headers_flag { dbg!(&bm_header); dbg!(&bm_info_header); }
@@ -46,6 +52,7 @@ fn main() {
     }
     
     // output image!
+    let write_start = Instant::now();
     let write_result = file_io::write_image(
         collector.output_filename, 
         bm_header, 
@@ -56,6 +63,11 @@ fn main() {
         println!("Error writing image: {:?}", write_result.unwrap_err());
     }
     if collector.debug_flag {
-        println!("Finished writing image in {:?}", now.elapsed());
+        let output = format!(
+            "Finished writing image:\n\t{:18} = {:?}\n\t{:18} = {:?}",
+            "total time elapsed", now.elapsed(),
+            "time writing", write_start.elapsed()
+        );
+        println!("{output}");
     }
 }
