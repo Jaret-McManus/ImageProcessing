@@ -30,7 +30,9 @@ pub enum ArgCollectError {
 pub struct ArgCollector {
     pub process_type: ProcessType,
     pub input_filename: String,
-    pub output_filename: String
+    pub output_filename: String,
+    pub debug_flag: bool,
+    pub print_headers_flag: bool
 }
 
 impl ArgCollector {
@@ -41,6 +43,8 @@ impl ArgCollector {
         let mut output_filename: String = "".to_string();
         let mut input_flag_seen: bool = false;
         let mut output_flag_seen: bool = false;
+        let mut debug_flag = false;
+        let mut print_headers_flag = false;
 
         while let Some(value) = args.pop_front() {
             match value.as_str() {
@@ -64,6 +68,8 @@ impl ArgCollector {
                     output_filename = args.pop_front()
                         .ok_or(NoOutputFilenameProvided)?;
                 },
+                "-d" | "--debug" => debug_flag = true,
+                "--print-headers" => print_headers_flag = true,
                 _ => return Err( InvalidFlagPassed(value) )
             }
         }
@@ -76,7 +82,8 @@ impl ArgCollector {
         };
 
         Ok(ArgCollector { 
-            process_type, input_filename, output_filename: output_filename 
+            process_type, input_filename, output_filename, 
+            debug_flag, print_headers_flag
         })
     }
 

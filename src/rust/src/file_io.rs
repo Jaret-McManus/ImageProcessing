@@ -1,6 +1,6 @@
-use std::{fs, io::{Error, Read, Seek, SeekFrom, Write}};
+use std::{collections::VecDeque, fs, io::{Error, Read, Seek, SeekFrom, Write}};
 
-use crate::data_structures::{BitmapHeader, BitmapInfoHeader, Image, Pixel24};
+use crate::{data_structures::{BitmapHeader, BitmapInfoHeader, Image, Pixel24}, file_io::FileIOError::{FailedReadEntirePixelArray, FailedReadPixel, FailedSkipByte}};
 
 use self::FileIOError::{
     CannotOpenInputFile, 
@@ -27,10 +27,13 @@ pub enum FileIOError {
     InvalidBitmapInfoHeader(String),
     FileSeekError(Error),
     NotImplemented,
+    FailedReadEntirePixelArray(Error),
     FailedReadPixelRow(String),
     FailedReadU32(Error), NotEnoughReadU32,
     FailedReadU16(Error),NotEnoughReadU16,
     FailedReadU8(Error), NotEnoughReadU8,
+    FailedReadPixel,
+    FailedSkipByte,
     WriteError(Error)
 }
 
@@ -49,9 +52,6 @@ pub fn read_file_to_image(input_filename: String)
     let bm_info_header = read_bitmap_info_header(&mut file)
         .map_err(|err| InvalidBitmapInfoHeader(format!("{:?}", err)))?;
 
-    dbg!(&bm_header);
-    dbg!(&bm_info_header);
-
     let image = read_image(&bm_header, &bm_info_header, file)?;
     Ok((image, bm_header, bm_info_header))
 }
@@ -66,11 +66,13 @@ fn read_image(
     file.seek(SeekFrom::Start(bm_header.offset as u64))
         .map_err(|err| FileSeekError(err))?;
     
-    for _  in 0..bm_info_header.height {
-        let row = read_pixel_row(bm_info_header.width, &mut file)
-            .map_err(|err| FailedReadPixelRow(format!("{:?}", err)))?;
-        image.push_row(row)
+    let pixel_array_size = (bm_header.size - bm_header.offset) as usize;
+    let mut bytes = read_rest_as_bytes(pixel_array_size, &mut file)?;
+    for _ in 0..bm_info_header.height {
+        let row = read_pixel_row_from_bytes(bm_info_header.width, &mut bytes)?;
+        image.push_row(row);
     }
+
 
     Ok(image)
 }
@@ -110,6 +112,51 @@ fn read_bitmap_info_header(file: &mut fs::File) -> Result<BitmapInfoHeader, File
         read_u32(file),
         read_u32(file),
     )
+}
+
+fn read_rest_as_bytes(expected_read_size: usize, file: &mut fs::File) -> Result<VecDeque<u8>, FileIOError> {
+    let mut buf: Vec<u8> = Vec::with_capacity(expected_read_size);
+    let bytes_read = file.read_to_end(&mut buf)
+        .map_err(|err| FailedReadEntirePixelArray(err))?;
+    
+    if bytes_read != expected_read_size { 
+        return Err(FailedReadPixelRow(format!(
+            "Not enough bytes read: read {bytes_read} vs expected {expected_read_size}"
+        )));
+    }
+
+    Ok(VecDeque::from(buf))
+}
+
+fn read_pixel_row_from_bytes(width: u32, bytes: &mut VecDeque<u8>) -> Result<Vec<Pixel24>, FileIOError> {
+    let mut row = Vec::<Pixel24>::with_capacity(width as usize);
+    for _ in 0..width {
+        let pixel = read_pixel_from_bytes(bytes)?;
+        row.push(pixel);
+    }
+
+    let bytes_read = width as usize * 3;
+    let remainder_bytes = bytes_read % 4;
+    if remainder_bytes != 0 {
+        skip_padding_bytes(4 - remainder_bytes, bytes)?;
+    }
+
+    Ok(row)
+}
+
+fn skip_padding_bytes(padding_len: usize, bytes: &mut VecDeque<u8>) -> Result<(), FileIOError> {
+    for _ in 0..padding_len {
+        bytes.pop_front().ok_or(FailedSkipByte)?;
+    }
+    Ok(())
+}
+
+fn read_pixel_from_bytes(bytes: &mut VecDeque<u8>) -> Result<Pixel24, FileIOError> {
+    let blue = bytes.pop_front().ok_or(FailedReadPixel)?;
+    let green = bytes.pop_front().ok_or(FailedReadPixel)?;
+    let red = bytes.pop_front().ok_or(FailedReadPixel)?;
+
+    Ok(Pixel24::new(red, green, blue))
 }
 
 fn read_pixel_row(width: u32, file: &mut fs::File) -> Result<Vec<Pixel24>, FileIOError> {
@@ -162,7 +209,10 @@ fn read_u8(file: &mut fs::File) -> Result<u8, FileIOError> {
     let bytes_read = file.read(&mut byte)
         .map_err(|err| FailedReadU8(err))?;
 
-    if bytes_read < 1 { return Err(NotEnoughReadU8); }
+    if bytes_read < 1 { 
+        println!("Not enought read u8 at {}", file.stream_position().unwrap() );
+        return Err(NotEnoughReadU8); 
+    }
     Ok(u8::from_le_bytes(byte))
 
 }

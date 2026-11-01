@@ -1,5 +1,5 @@
 use std::{
-    collections::VecDeque, env, process::exit
+    collections::VecDeque, env, process::exit, time::Instant
 };
 mod arg_collector;
 mod file_io;
@@ -11,6 +11,7 @@ use crate::{
 };
 
 fn main() {
+    let now = Instant::now();
     let args: VecDeque<String> = env::args().skip(1).collect();
 
     let collector_result = ArgCollector::create(args);
@@ -19,7 +20,6 @@ fn main() {
         exit(1);
     };
 
-    println!("try read image");
     let image_result = file_io::read_file_to_image(collector.input_filename);
     let Ok((
         image,
@@ -30,6 +30,12 @@ fn main() {
         exit(-1);
     };
 
+    if collector.debug_flag {
+        println!("Finished reading image in {:?}", now.elapsed());
+    }
+
+    if collector.print_headers_flag { dbg!(&bm_header); dbg!(&bm_info_header); }
+    
     let new_image: Image;
     match collector.process_type {
         ProcessType::BoxBlur(kernel_size) => { 
@@ -48,5 +54,8 @@ fn main() {
     ); 
     if write_result.is_err() {
         println!("Error writing image: {:?}", write_result.unwrap_err());
+    }
+    if collector.debug_flag {
+        println!("Finished writing image in {:?}", now.elapsed());
     }
 }
