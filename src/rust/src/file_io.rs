@@ -1,4 +1,4 @@
-use std::{collections::VecDeque, fs, io::{Error, Read, Seek, SeekFrom, Write}};
+use std::{collections::VecDeque, fs, io::{BufWriter, Error, Read, Seek, SeekFrom, Write}};
 
 use crate::{data_structures::{BitmapHeader, BitmapInfoHeader, Image, Pixel24}, file_io::FileIOError::{FailedReadEntirePixelArray, FailedReadPixel, FailedSkipByte}};
 
@@ -195,93 +195,95 @@ fn _read_u8(file: &mut fs::File) -> Result<u8, FileIOError> {
 pub fn write_image(
     path: String, bm_header: BitmapHeader, bm_info_header: BitmapInfoHeader, image: Image
 ) -> Result<(), FileIOError> {
-    let mut file = fs::File::create(path)
+    let file = fs::File::create(path)
         .map_err(|err| CannotOpenOutputFile(err))?;
+    let mut writer = BufWriter::new(file);
+    
+    write_bitmap_header(&bm_header, &mut writer)?;
+    write_bitmap_info_header(&bm_info_header, &mut writer)?;
 
-    write_bitmap_header(&bm_header, &mut file)?;
-    write_bitmap_info_header(&bm_info_header, &mut file)?;
-
-    file.seek(SeekFrom::Start(bm_header.offset as u64))
+    writer.seek(SeekFrom::Start(bm_header.offset as u64))
         .map_err(|err| WriteError(err))?;
 
     for row in image.pixels.iter().rev() {
-        // dbg!(&row);
-        write_pixel_row(row, &mut file)?;
+        write_pixel_row(row, &mut writer)?;
     }
+    
+    
 
     Ok(())
 }
 
-fn write_bitmap_header(bm_header: &BitmapHeader, file: &mut fs::File) -> Result<(), FileIOError> {
-    file.write_all(b"BM")
+fn write_bitmap_header(bm_header: &BitmapHeader, writer: &mut BufWriter<fs::File>) -> Result<(), FileIOError> {
+    writer.write_all(b"BM")
         .map_err(|err| WriteError(err))?;
-    write_u32(bm_header.size, file)?;
-    write_u16(bm_header.reserved1, file)?;
-    write_u16(bm_header.reserved2, file)?;
-    write_u32(bm_header.offset, file)?;
+    write_u32(bm_header.size, writer)?;
+    write_u16(bm_header.reserved1, writer)?;
+    write_u16(bm_header.reserved2, writer)?;
+    write_u32(bm_header.offset, writer)?;
     
     Ok(())
 }
 
-fn write_bitmap_info_header(bm_info_header: &BitmapInfoHeader, file: &mut fs::File) -> Result<(), FileIOError> {
-    write_u32(bm_info_header.hdr_size, file)?;
-    write_u32(bm_info_header.width, file)?;
-    write_u32(bm_info_header.height, file)?;
-    write_u16(bm_info_header.planes, file)?;
-    write_u16(bm_info_header.bits_per_pixel, file)?;
-    write_u32(bm_info_header.compression, file)?;
-    write_u32(bm_info_header.image_size, file)?;
-    write_u32(bm_info_header.x_pixels_per_m, file)?;
-    write_u32(bm_info_header.y_pixels_per_m, file)?;
-    write_u32(bm_info_header.colors_used, file)?;
-    write_u32(bm_info_header.important_colors, file)?;
+fn write_bitmap_info_header(bm_info_header: &BitmapInfoHeader, writer: &mut BufWriter<fs::File>) -> Result<(), FileIOError> {
+    write_u32(bm_info_header.hdr_size, writer)?;
+    write_u32(bm_info_header.width, writer)?;
+    write_u32(bm_info_header.height, writer)?;
+    write_u16(bm_info_header.planes, writer)?;
+    write_u16(bm_info_header.bits_per_pixel, writer)?;
+    write_u32(bm_info_header.compression, writer)?;
+    write_u32(bm_info_header.image_size, writer)?;
+    write_u32(bm_info_header.x_pixels_per_m, writer)?;
+    write_u32(bm_info_header.y_pixels_per_m, writer)?;
+    write_u32(bm_info_header.colors_used, writer)?;
+    write_u32(bm_info_header.important_colors, writer)?;
 
     Ok(())
 }
 
-fn write_pixel_row(row: &Vec<Pixel24>, file: &mut fs::File) -> Result<(), FileIOError> {
+fn write_pixel_row(row: &Vec<Pixel24>, writer: &mut BufWriter<fs::File>) -> Result<(), FileIOError> {
     let bytes_written_per_row = row.len() * 3;
     for pixel in row {
-        write_pixel(pixel, file)?;
+        write_pixel(pixel, writer)?;
     }
     
     let remainder_bytes = bytes_written_per_row % 4;
     if remainder_bytes != 0 {
-        write_padding(4 - remainder_bytes, file)?;
+        write_padding(4 - remainder_bytes, writer)?;
     }
     Ok(())
 }
 
-fn write_pixel(pixel: &Pixel24, file: &mut fs::File) -> Result<(), FileIOError> {
-    write_u8(pixel.blue, file)?;
-    write_u8(pixel.green, file)?;
-    write_u8(pixel.red, file)?;
+fn write_pixel(pixel: &Pixel24, writer: &mut BufWriter<fs::File>) -> Result<(), FileIOError> {
+    write_u8(pixel.blue, writer)?;
+    write_u8(pixel.green, writer)?;
+    write_u8(pixel.red, writer)?;
 
     Ok(())
 }
 
-fn write_u32(number: u32, file: &mut fs::File) -> Result<(), FileIOError> {
-    file.write(&number.to_le_bytes())
+fn write_u32(number: u32, writer: &mut BufWriter<fs::File>) -> Result<(), FileIOError> {
+    writer.write(&number.to_le_bytes())
         .map_err(|err| WriteError(err))?;
     Ok(())
 }
 
-fn write_u16(number: u16, file: &mut fs::File) -> Result<(), FileIOError> {
-    file.write(&number.to_le_bytes())
+fn write_u16(number: u16, writer: &mut BufWriter<fs::File>) -> Result<(), FileIOError> {
+    writer.write(&number.to_le_bytes())
         .map_err(|err| WriteError(err))?;
     Ok(())
 }
 
-fn write_u8(number: u8, file: &mut fs::File) -> Result<(), FileIOError> {
-    file.write(&number.to_le_bytes())
+fn write_u8(number: u8, writer: &mut BufWriter<fs::File>) -> Result<(), FileIOError> {
+    writer.write(&number.to_le_bytes())
         .map_err(|err| WriteError(err))?;
     Ok(())
 
 }
 
-fn write_padding(padding_len: usize, file: &mut fs::File) -> Result<(), FileIOError> {
+fn write_padding(padding_len: usize, writer: &mut BufWriter<fs::File>) -> Result<(), FileIOError> {
     for _ in 0..padding_len {
-        file.write(b"\0")
+        writer.write(b"\0")
             .map_err(|err| WriteError(err))?;
     }
 
