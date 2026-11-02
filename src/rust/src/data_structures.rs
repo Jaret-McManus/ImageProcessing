@@ -1,7 +1,7 @@
 use std::collections::VecDeque;
 use crate::file_io::FileIOError;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Pixel24 {
     pub red: u8,
     pub green: u8,
@@ -31,8 +31,12 @@ impl Image {
         }
     }
 
-    pub fn push_row(&mut self, row: Vec<Pixel24>) -> () {
+    pub fn push_row_backwards(&mut self, row: Vec<Pixel24>) -> () {
         self.pixels.push_front(row);
+    }
+
+    pub fn push_row(&mut self, row: Vec<Pixel24>) -> () {
+        self.pixels.push_back(row);
     }
 }
 

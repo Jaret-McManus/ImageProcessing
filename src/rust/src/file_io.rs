@@ -1,4 +1,4 @@
-use std::{collections::VecDeque, fs, io::{BufWriter, Error, Read, Seek, SeekFrom, Write}};
+use std::{collections::VecDeque, fs, io::{self, BufWriter, Error, Read, Seek, SeekFrom, Write}};
 
 use crate::{data_structures::{BitmapHeader, BitmapInfoHeader, Image, Pixel24}, file_io::FileIOError::{FailedReadEntirePixelArray, FailedReadPixel, FailedSkipByte}};
 
@@ -70,7 +70,7 @@ fn read_image(
     let mut bytes = read_rest_as_bytes(pixel_array_size, &mut file)?;
     for _ in 0..bm_info_header.height {
         let row = read_pixel_row_from_bytes(bm_info_header.width, &mut bytes)?;
-        image.push_row(row);
+        image.push_row_backwards(row);
     }
 
 
@@ -209,8 +209,6 @@ pub fn write_image(
         write_pixel_row(row, &mut writer)?;
     }
     
-    
-
     Ok(())
 }
 

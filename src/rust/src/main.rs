@@ -43,6 +43,7 @@ fn main() {
     }
     
     // output image!
+    println!("before write");
     let write_start = Instant::now();
     let write_result = file_io::write_image(
         collector.output_filename.clone(), 
